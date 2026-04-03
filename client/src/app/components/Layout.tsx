@@ -20,7 +20,7 @@ export function Layout() {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                 <ShoppingCart className="w-4 h-4 text-white" />
               </div>
-              <span className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">SmartShop</span>
+              <span className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ClickNCart</span>
             </Link>
 
             {/* Search Bar - Desktop */}
@@ -37,9 +37,11 @@ export function Layout() {
 
             {/* Actions */}
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="hidden md:flex hover:text-blue-600">
-                <Heart className="w-5 h-5" />
-              </Button>
+              <Link to="/favorites">
+                <Button variant="ghost" size="icon" className="hidden md:flex hover:text-blue-600">
+                  <Heart className="w-5 h-5" />
+                </Button>
+              </Link>
               <Button variant="ghost" size="icon" className="hidden md:flex hover:text-blue-600">
                 <User className="w-5 h-5" />
               </Button>
@@ -63,17 +65,15 @@ export function Layout() {
           <nav className="hidden md:flex items-center gap-8 py-3 border-t border-blue-100">
             <Link
               to="/"
-              className={`text-sm transition-colors ${
-                location.pathname === "/" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
-              }`}
+              className={`text-sm transition-colors ${location.pathname === "/" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
+                }`}
             >
               Home
             </Link>
             <Link
               to="/shop"
-              className={`text-sm transition-colors ${
-                location.pathname === "/shop" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
-              }`}
+              className={`text-sm transition-colors ${location.pathname === "/shop" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
+                }`}
             >
               Shop
             </Link>
