@@ -29,7 +29,7 @@ export function HomePage() {
                   Shop Now <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-900">
+              <Button size="lg" variant="outline" className="text-white bg-transparent border-white hover:bg-none hover:text-blue-900">
                 Explore Collection
               </Button>
             </div>
@@ -151,7 +151,7 @@ export function HomePage() {
               <div className="absolute bottom-0 left-0 p-8 text-white">
                 <h3 className="text-3xl mb-2">Smart Wearables</h3>
                 <p className="mb-4 text-blue-100">Track your fitness goals</p>
-                <Button variant="outline" className="text-white border-white hover:bg-white hover:text-blue-900">
+                <Button variant="outline" className="text-white bg-transparent border-white hover:bg-white hover:text-blue-900">
                   Shop Wearables <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -166,7 +166,7 @@ export function HomePage() {
               <div className="absolute bottom-0 left-0 p-8 text-white">
                 <h3 className="text-3xl mb-2">Photography Gear</h3>
                 <p className="mb-4 text-purple-100">Capture every moment</p>
-                <Button variant="outline" className="text-white border-white hover:bg-white hover:text-purple-900">
+                <Button variant="outline" className="text-white bg-transparent border-white hover:bg-white hover:text-purple-900">
                   Shop Cameras <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -217,7 +217,7 @@ export function HomePage() {
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-6 py-3 rounded-lg bg-white/10 backdrop-blur text-white placeholder:text-blue-200 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="flex-1 px-6 py-2 rounded-lg bg-white/10 backdrop-blur text-white placeholder:text-blue-200 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
             />
             <Button size="lg" className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 border-0 text-white">
               Subscribe
