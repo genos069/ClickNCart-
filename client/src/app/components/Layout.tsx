@@ -42,9 +42,11 @@ export function Layout() {
                   <Heart className="w-5 h-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" className="hidden md:flex hover:text-blue-600">
-                <User className="w-5 h-5" />
-              </Button>
+              <Link to="/login">
+                <Button variant="ghost" size="icon" className="hidden md:flex hover:text-blue-600">
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
               <Link to="/cart">
                 <Button variant="ghost" size="icon" className="relative hover:text-blue-600">
                   <ShoppingCart className="w-5 h-5" />
@@ -107,7 +109,7 @@ export function Layout() {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                   <ShoppingCart className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-lg font-semibold text-white">SmartShop</span>
+                <span className="text-lg font-semibold text-white">ClickNCart</span>
               </div>
               <p className="text-sm text-blue-200">
                 Your destination for premium tech and lifestyle products.
@@ -147,7 +149,7 @@ export function Layout() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-blue-800 text-center text-sm text-blue-200">
-            © 2026 SmartShop. All rights reserved.
+            © 2026 ClickNCart. All rights reserved.
           </div>
         </div>
       </footer>

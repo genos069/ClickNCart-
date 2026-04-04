@@ -6,6 +6,7 @@ import { CartPage } from "./pages/CartPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { Layout } from "./components/Layout";
 import { FavoritesPage } from "./pages/FavoritePage";
+import { LoginPage } from "./pages/LoginPage";
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
       { path: "cart", Component: CartPage },
       { path: "checkout", Component: CheckoutPage },
       { path: "favorites", Component: FavoritesPage },
+      { path: "login", Component: LoginPage }
     ],
   },
 ]);
