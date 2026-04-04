@@ -20,7 +20,7 @@ export function Layout() {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                 <ShoppingCart className="w-4 h-4 text-white" />
               </div>
-              <span className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ClickNCart</span>
+              <span className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">SmartShop</span>
             </Link>
 
             {/* Search Bar - Desktop */}
@@ -38,7 +38,7 @@ export function Layout() {
             {/* Actions */}
             <div className="flex items-center gap-4">
               <Link to="/favorites">
-                <Button variant="ghost" size="icon" className="hidden md:flex hover:text-blue-600">
+                <Button variant="ghost" size="icon" className="hidden md:flex hover:text-pink-600 relative">
                   <Heart className="w-5 h-5" />
                 </Button>
               </Link>
@@ -79,18 +79,34 @@ export function Layout() {
             >
               Shop
             </Link>
-            <a href="#" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
+            <Link
+              to="/new-arrivals"
+              className={`text-sm transition-colors ${location.pathname === "/new-arrivals" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
+                }`}
+            >
               New Arrivals
-            </a>
-            <a href="#" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
+            </Link>
+            <Link
+              to="/brands"
+              className={`text-sm transition-colors ${location.pathname === "/brands" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
+                }`}
+            >
               Brands
-            </a>
-            <a href="#" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
+            </Link>
+            <Link
+              to="/sale"
+              className={`text-sm transition-colors ${location.pathname === "/sale" ? "text-red-600 font-semibold" : "text-gray-600 hover:text-red-600"
+                }`}
+            >
               Sale
-            </a>
-            <a href="#" className="text-sm text-purple-600 hover:text-purple-700 transition-colors font-semibold">
+            </Link>
+            <Link
+              to="/deals"
+              className={`text-sm transition-colors ${location.pathname === "/deals" ? "text-purple-600 font-semibold" : "text-purple-600 hover:text-purple-700 font-semibold"
+                }`}
+            >
               Deals
-            </a>
+            </Link>
           </nav>
         </div>
       </header>
@@ -109,7 +125,7 @@ export function Layout() {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                   <ShoppingCart className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-lg font-semibold text-white">ClickNCart</span>
+                <span className="text-lg font-semibold text-white">SmartShop</span>
               </div>
               <p className="text-sm text-blue-200">
                 Your destination for premium tech and lifestyle products.
@@ -149,7 +165,7 @@ export function Layout() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-blue-800 text-center text-sm text-blue-200">
-            © 2026 ClickNCart. All rights reserved.
+            © 2026 SmartShop. All rights reserved.
           </div>
         </div>
       </footer>
