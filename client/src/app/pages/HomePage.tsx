@@ -4,36 +4,98 @@ import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { ArrowRight, Star, Truck, Shield, Zap, CreditCard } from "lucide-react";
 import { products } from "../data/products";
+import { useEffect, useState } from "react";
 
 export function HomePage() {
+const [currentSlide, setCurrentSlide] = useState(0);
+
+  const heroSlides = [
+    {
+      title: "Spring Collection 2026",
+      subtitle: "Discover the latest in tech and lifestyle. Up to 30% off on selected items.",
+      badge: "Limited Time Offer",
+      gradient: "from-blue-900 via-purple-900 to-indigo-900",
+    },
+    {
+      title: "Summer Sale Event",
+      subtitle: "Beat the heat with hot deals! Save up to 50% on electronics.",
+      badge: "Flash Sale",
+      gradient: "from-orange-600 via-red-600 to-pink-600",
+    },
+    {
+      title: "New Arrivals",
+      subtitle: "Check out the newest products just added to our collection.",
+      badge: "Just Landed",
+      gradient: "from-green-600 via-teal-600 to-blue-600",
+    },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, []);
+
   const featuredProducts = products.slice(0, 4);
   const trendingProducts = products.slice(4, 8);
 
   return (
     <div>
       {/* Hero Section - Design 1: Full-width with overlay */}
-      <section className="relative h-[600px] bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
-        <div className="relative container mx-auto px-4 h-full flex items-center">
-          <div className="max-w-2xl text-white">
-            <Badge className="mb-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 border-0">Limited Time Offer</Badge>
-            <h1 className="text-5xl md:text-6xl mb-6">
-              Spring Collection 2026
-            </h1>
-            <p className="text-xl mb-8 text-blue-100">
-              Discover the latest in tech and lifestyle. Up to 30% off on selected items.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link to="/shop">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
-                  Shop Now <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="text-white bg-transparent border-white hover:bg-none hover:text-blue-900">
-                Explore Collection
-              </Button>
+      <section className="relative h-[600px] overflow-hidden">
+        <div 
+          className="flex flex-col transition-transform duration-1000 ease-in-out h-full"
+          style={{ transform: `translateY(-${currentSlide * 100}%)` }}
+        >
+          {heroSlides.map((slide, index) => (
+            <div 
+              key={index}
+              className={`relative min-h-[600px] bg-gradient-to-br ${slide.gradient} flex-shrink-0`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
+              <div className="relative container mx-auto px-4 h-full flex items-center">
+                <div className="max-w-2xl text-white">
+                  <Badge className="mb-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 border-0">
+                    {slide.badge}
+                  </Badge>
+                  <h1 className="text-5xl md:text-6xl mb-6">
+                    {slide.title}
+                  </h1>
+                  <p className="text-xl mb-8 text-blue-100">
+                    {slide.subtitle}
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <Link to="/shop">
+                      <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
+                        Shop Now <ArrowRight className="ml-2 w-5 h-5" />
+                      </Button>
+                    </Link>
+                    <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-900">
+                      Explore Collection
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
+
+        {/* Slide Indicators */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          {heroSlides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                currentSlide === index 
+                  ? "bg-white w-8" 
+                  : "bg-white/50 hover:bg-white/75"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       </section>
 

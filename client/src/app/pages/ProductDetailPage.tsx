@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router";
+import { Link, useParams } from "react-router";
 import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Star, Heart, Share2, Truck, Shield, ArrowLeft, Check } from "lucide-react";
+import { Star, Heart, Share2, Truck, Shield, ArrowLeft, Check, Package } from "lucide-react";
 import { products } from "../data/products";
+import { Label } from "../components/ui/label";
+import { Input } from "../components/ui/input";
 
 export function ProductDetailPage() {
   const { id } = useParams();
@@ -240,44 +242,170 @@ export function ProductDetailPage() {
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
               <div className="space-y-6">
-                <div className="flex items-start gap-4 pb-6 border-b">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-semibold">
-                    JD
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold">John Doe</span>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                {/* Review Submission Form */}
+                <Card className="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50">
+                  <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Write a Review
+                  </h3>
+                  <form className="space-y-4">
+                    {/* Star Rating Input */}
+                    <div>
+                      <Label className="mb-2 block">Your Rating</Label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            className="group"
+                          >
+                            <Star className="w-8 h-8 text-gray-300 hover:text-amber-400 hover:fill-amber-400 transition-colors cursor-pointer" />
+                          </button>
                         ))}
                       </div>
                     </div>
-                    <p className="text-gray-600 mb-2">
-                      Excellent product! The quality exceeded my expectations and it arrived quickly.
-                    </p>
-                    <p className="text-xs text-gray-500">Reviewed on March 15, 2026</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4 pb-6 border-b">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-semibold">
-                    SK
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold">Sarah Kim</span>
-                      <div className="flex items-center">
-                        {[...Array(4)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        ))}
-                        <Star className="w-4 h-4 text-gray-300" />
+
+                    {/* Review Title */}
+                    <div>
+                      <Label htmlFor="review-title">Review Title</Label>
+                      <Input
+                        id="review-title"
+                        type="text"
+                        placeholder="Sum up your experience"
+                        className="mt-2 border-blue-200 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Review Text */}
+                    <div>
+                      <Label htmlFor="review-text">Your Review</Label>
+                      <textarea
+                        id="review-text"
+                        rows={4}
+                        placeholder="Share your thoughts about this product..."
+                        className="mt-2 w-full px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Name and Email */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="review-name">Your Name</Label>
+                        <Input
+                          id="review-name"
+                          type="text"
+                          placeholder="John Doe"
+                          className="mt-2 border-blue-200 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="review-email">Email (won't be published)</Label>
+                        <Input
+                          id="review-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          className="mt-2 border-blue-200 focus:ring-blue-500"
+                        />
                       </div>
                     </div>
-                    <p className="text-gray-600 mb-2">
-                      Great value for money. Works perfectly and looks amazing!
-                    </p>
-                    <p className="text-xs text-gray-500">Reviewed on March 10, 2026</p>
-                  </div>
+
+                    {/* Image Upload */}
+                    <div>
+                      <Label htmlFor="review-images">Add Photos (optional)</Label>
+                      <div className="mt-2 border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
+                        <input
+                          id="review-images"
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <label htmlFor="review-images" className="cursor-pointer">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Package className="w-6 h-6 text-blue-600" />
+                            </div>
+                            <p className="text-sm text-gray-600">Click to upload photos</p>
+                            <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Verified Purchase */}
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        id="verified"
+                        className="w-4 h-4 mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="verified" className="text-sm text-gray-600">
+                        I certify that this review is based on my own experience and is my genuine opinion
+                      </label>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      Submit Review
+                    </Button>
+                  </form>
+                </Card>
+
+                {/* Existing Reviews */}
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold">Customer Reviews ({product.reviews})</h3>
+                  
+                  {[...Array(3)].map((_, i) => (
+                    <Card key={i} className="p-6 border border-blue-100">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {String.fromCharCode(65 + i)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <p className="font-semibold">Customer {i + 1}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex">
+                                  {[...Array(5)].map((_, j) => (
+                                    <Star
+                                      key={j}
+                                      className={`w-4 h-4 ${
+                                        j < 4 ? "fill-amber-400 text-amber-400" : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <Badge className="bg-green-100 text-green-700 border-0 text-xs">
+                                  Verified Purchase
+                                </Badge>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-500">
+                              {new Date(2026, 3, 9 - i).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <h4 className="font-semibold mb-2">Great product!</h4>
+                          <p className="text-gray-600 mb-3">
+                            This product exceeded my expectations. The quality is outstanding and it works perfectly. Highly recommend!
+                          </p>
+                          <div className="flex items-center gap-4 text-sm">
+                            <button className="text-gray-600 hover:text-blue-600 transition-colors">
+                              👍 Helpful ({Math.floor(Math.random() * 20) + 5})
+                            </button>
+                            <button className="text-gray-600 hover:text-blue-600 transition-colors">
+                              Reply
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+
+                  <Button variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
+                    Load More Reviews
+                  </Button>
                 </div>
               </div>
             </TabsContent>
