@@ -11,26 +11,28 @@ import { NewArrivalsPage } from "./pages/NewArrivalsPage";
 import { SalePage } from "./pages/SalePage";
 import { DealsPage } from "./pages/DealsPage";
 import { BrandsPage } from "./pages/BrandsPage";
+import { OrderConfirmationPage } from "./pages/OrderConfirmationPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: Layout,
+    element: <Layout />,
     children: [
-      { index: true, Component: HomePage },
-      { path: "shop", Component: ShopPage },
-      { path: "product/:id", Component: ProductDetailPage },
-      { path: "cart", Component: CartPage },
-      { path: "checkout", Component: CheckoutPage },
-      { path: "favorites", Component: FavoritesPage },
-      { path: "new-arrivals", Component: NewArrivalsPage },
-      { path: "brands", Component: BrandsPage },
-      { path: "sale", Component: SalePage },
-      { path: "deals", Component: DealsPage },
+      { index: true, element: <HomePage /> },
+      { path: "shop", element: <ShopPage /> },
+      { path: "product/:id", element: <ProductDetailPage /> },
+      { path: "cart", element: <CartPage /> },
+      { path: "checkout", element: <CheckoutPage /> },
+      { path: "favorites", element: <FavoritesPage /> },
+      { path: "new-arrivals", element: <NewArrivalsPage /> },
+      { path: "brands", element: <BrandsPage /> },
+      { path: "sale", element: <SalePage /> },
+      { path: "deals", element: <DealsPage /> },
+      { path: "order-confirmation", element: <OrderConfirmationPage /> },
     ],
   },
   {
     path: "/login",
-    Component: LoginPage,
+    element: <LoginPage />,
   },
 ]);
