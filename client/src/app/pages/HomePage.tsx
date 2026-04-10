@@ -72,7 +72,7 @@ const [currentSlide, setCurrentSlide] = useState(0);
                         Shop Now <ArrowRight className="ml-2 w-5 h-5" />
                       </Button>
                     </Link>
-                    <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-900">
+                    <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-900 bg-transparent">
                       Explore Collection
                     </Button>
                   </div>
@@ -264,6 +264,19 @@ const [currentSlide, setCurrentSlide] = useState(0);
                 </div>
               </Link>
             ))}
+          </div>
+          {/* see more button */}
+          <div className="text-center mt-10">
+            <Link to="/shop">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 group"
+              >
+                See More Trending Items
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

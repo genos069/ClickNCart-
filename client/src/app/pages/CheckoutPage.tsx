@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -9,6 +9,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Lock, CreditCard, Truck, Package, CheckCircle2 } from "lucide-react";
 
 export function CheckoutPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState<"shipping" | "payment" | "review">("shipping");
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("card");
@@ -261,7 +262,12 @@ export function CheckoutPage() {
                   <Button type="button" variant="outline" size="lg" className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50" onClick={() => setStep("payment")}>
                     Back
                   </Button>
-                  <Button type="button" size="lg" className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <Button 
+                    type="button" 
+                    size="lg" 
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    onClick={() => navigate("/order-confirmation")}
+                  >
                     <Lock className="mr-2 w-5 h-5" />
                     Place Order
                   </Button>
