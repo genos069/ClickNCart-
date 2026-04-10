@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser"
 import { fileURLToPath } from "url";
 import path from "path";
-import { ENV } from "./lib/ENV.js";
+import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
 
 
