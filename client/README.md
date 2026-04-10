@@ -1,7 +1,7 @@
 
   # E-commerce webpage designs
 
-  This is a code bundle for E-commerce webpage designs. The original project is available at https://www.figma.com/design/AJlskQOxrAkPChaqsbh2OD/E-commerce-webpage-designs.
+  This is a code bundle for E-commerce webpage designs.
 
   ## Running the code
 
