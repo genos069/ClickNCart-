@@ -7,9 +7,7 @@ import { CheckoutPage } from "./pages/CheckoutPage";
 import { Layout } from "./components/Layout";
 import { FavoritesPage } from "./pages/FavoritePage";
 import { LoginPage } from "./pages/LoginPage";
-import { NewArrivalsPage } from "./pages/NewArrivalsPage";
 import { SalePage } from "./pages/SalePage";
-import { DealsPage } from "./pages/DealsPage";
 import { BrandsPage } from "./pages/BrandsPage";
 import { OrderConfirmationPage } from "./pages/OrderConfirmationPage";
 
@@ -24,10 +22,8 @@ export const router = createBrowserRouter([
       { path: "cart", element: <CartPage /> },
       { path: "checkout", element: <CheckoutPage /> },
       { path: "favorites", element: <FavoritesPage /> },
-      { path: "new-arrivals", element: <NewArrivalsPage /> },
       { path: "brands", element: <BrandsPage /> },
       { path: "sale", element: <SalePage /> },
-      { path: "deals", element: <DealsPage /> },
       { path: "order-confirmation", element: <OrderConfirmationPage /> },
     ],
   },

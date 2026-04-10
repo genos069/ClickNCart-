@@ -80,13 +80,6 @@ export function Layout() {
               Shop
             </Link>
             <Link
-              to="/new-arrivals"
-              className={`text-sm transition-colors ${location.pathname === "/new-arrivals" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
-                }`}
-            >
-              New Arrivals
-            </Link>
-            <Link
               to="/brands"
               className={`text-sm transition-colors ${location.pathname === "/brands" ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-600"
                 }`}
@@ -99,13 +92,6 @@ export function Layout() {
                 }`}
             >
               Sale
-            </Link>
-            <Link
-              to="/deals"
-              className={`text-sm transition-colors ${location.pathname === "/deals" ? "text-purple-600 font-semibold" : "text-purple-600 hover:text-purple-700 font-semibold"
-                }`}
-            >
-              Deals
             </Link>
           </nav>
         </div>
