@@ -203,6 +203,20 @@ export function BrandsPage() {
               </Card>
             ))}
           </div>
+
+          {/* See More Button */}
+          <div className="text-center mt-10">
+            <Link to="/shop">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 group"
+              >
+                See More Brands
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Why Shop Our Brands */}
