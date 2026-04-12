@@ -1,43 +1,28 @@
 import express from "express";
+import dotenv from "dotenv";
 import cors from "cors";
-import cookieParser from "cookie-parser"
-import { fileURLToPath } from "url";
-import path from "path";
-import { ENV } from "./lib/ENV.js";
-import { connectDB } from "./lib/db.js";
+import connectDB from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
 
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+dotenv.config({quiet: true});
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use(cookieParser())
 
-app.get("/server", (req, res) => {
-  res.status(200).json({ msg: "Server is Running" });
+// Connect DB
+connectDB();
+
+// Middleware
+app.use(express.json());
+app.use(cors());
+app.use("/api/auth", authRoutes);
+
+// Test route
+app.get("/", (req, res) => {
+  res.send("API is running...");
 });
 
-if (ENV.NODE_ENV === "production") {
-  const buildPath = path.join(__dirname, "../../client/dist");
+const PORT = process.env.PORT || 5000;
 
-  app.use(express.static(buildPath));
-
-  app.get("/{*any}", (req, res) => {
-    res.sendFile(path.join(buildPath, "index.html"));
-  });
-}
-
-const startServer = async () => {
-  try {
-    await connectDB();
-    app.listen(ENV.PORT, () =>
-      console.log("Server is running on port:", ENV.PORT),
-    );
-  } catch (error) {
-    console.error("💥 Error starting the server", error);
-  }
-};
-startServer();
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

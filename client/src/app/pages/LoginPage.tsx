@@ -1,15 +1,109 @@
-import { useState } from "react";
+
 import { Link } from "react-router";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
+import { Button } from "../components/ui/button.js";
+import { Input } from "../components/ui/input.js";
+import { Label } from "../components/ui/label.js";
 import { ShoppingCart, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { loginUser, registerUser } from "../../services/authServices.js";
 
 export function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const navigate = useNavigate();
+
+  // Get user from localStorage
+  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "null");
+
+  const handleLogout = () => {
+    localStorage.removeItem("userInfo");
+    navigate("/login");
+  };
+
+  // LOGIN STATE
+  const [loginData, setLoginData] = useState({
+    email: "",
+    password: "",
+  });
+
+  // SIGNUP STATE
+  const [signupData, setSignupData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleLoginChange = (e:any) => {
+    setLoginData({ ...loginData, [e.target.id.split("-")[1]]: e.target.value });
+  };
+
+  const handleSignupChange = (e:any) => {
+    setSignupData({ ...signupData, [e.target.id.split("-")[1]]: e.target.value });
+  };
+
+  const handleLogin = async (e:any) => {
+    e.preventDefault();
+
+    try {
+      const { data } = await loginUser(loginData);
+
+      // Save token
+      localStorage.setItem("userInfo", JSON.stringify(data));
+
+      alert("Login successful ✅");
+
+      navigate("/"); // redirect to home
+    } catch (error) {
+      alert("Login failed ❌");
+    }
+  };
+
+  const handleSignup = async (e:any) => {
+    e.preventDefault();
+    console.log(signupData);
+    if (signupData.password !== signupData.confirmPassword) {
+      return alert("Passwords do not match ❌");
+    }
+
+    try {
+      const { data } = await registerUser({
+        name: signupData.name,
+        email: signupData.email,
+        password: signupData.password,
+      });
+
+      localStorage.setItem("userInfo", JSON.stringify(data));
+
+      alert("Account created ✅");
+
+      navigate("/");
+    } catch (error) {
+      alert("Signup failed ❌");
+    }
+  };
+
   return (
+    userInfo ? (
+      <div>
+        <div className="flex items-center gap-2 text-sm text-gray-700">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-medium">{userInfo.name}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50">
+              Logout
+            </Button>
+      </div>
+  ): (
+      
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
       <div className="w-full max-w-6xl relative">
         {/* Main Container */}
@@ -17,14 +111,12 @@ export function LoginPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
             {/* Login Form */}
             <div
-              className={`flex items-center justify-center p-8 lg:p-12 transition-all duration-700 ${
-                isSignUp ? "lg:order-2" : "lg:order-1"
-              }`}
+              className={`flex items-center justify-center p-8 lg:p-12 transition-all duration-700 ${isSignUp ? "lg:order-2" : "lg:order-1"
+                }`}
             >
               <div
-                className={`w-full max-w-md transition-all duration-700 ${
-                  isSignUp ? "lg:opacity-0 lg:invisible lg:translate-x-10" : "lg:opacity-100 lg:visible lg:translate-x-0"
-                }`}
+                className={`w-full max-w-md transition-all duration-700 ${isSignUp ? "lg:opacity-0 lg:invisible lg:translate-x-10" : "lg:opacity-100 lg:visible lg:translate-x-0"
+                  }`}
               >
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 mb-4">
@@ -38,7 +130,7 @@ export function LoginPage() {
                   <p className="text-gray-600">Sign in to continue shopping</p>
                 </div>
 
-                <form className="space-y-5">
+                <form onSubmit={handleLogin} className="space-y-5">
                   <div>
                     <Label htmlFor="login-email">Email Address</Label>
                     <div className="relative mt-2">
@@ -47,6 +139,7 @@ export function LoginPage() {
                         id="login-email"
                         type="email"
                         placeholder="you@example.com"
+                        onChange={handleLoginChange}
                         className="pl-10 h-12 border-blue-200 focus:ring-blue-500"
                       />
                     </div>
@@ -60,6 +153,7 @@ export function LoginPage() {
                         id="login-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
+                        onChange={handleLoginChange}
                         className="pl-10 pr-10 h-12 border-blue-200 focus:ring-blue-500"
                       />
                       <button
@@ -84,9 +178,12 @@ export function LoginPage() {
                       />
                       <span className="text-sm text-gray-600">Remember me</span>
                     </label>
-                    <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
+                    <button 
+                    onClick={() => navigate("/forgot-password")}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                    >
                       Forgot password?
-                    </a>
+                    </button>
                   </div>
 
                   <Button
@@ -153,14 +250,12 @@ export function LoginPage() {
 
             {/* Sign Up Form */}
             <div
-              className={`flex items-center justify-center p-8 lg:p-12 transition-all duration-700 ${
-                isSignUp ? "lg:order-2" : "lg:order-1"
-              }`}
+              className={`flex items-center justify-center p-8 lg:p-12 transition-all duration-700 ${isSignUp ? "lg:order-2" : "lg:order-1"
+                }`}
             >
               <div
-                className={`w-full max-w-md transition-all duration-700 ${
-                  isSignUp ? "lg:opacity-100 lg:visible lg:translate-x-0" : "lg:opacity-0 lg:invisible lg:-translate-x-10"
-                }`}
+                className={`w-full max-w-md transition-all duration-700 ${isSignUp ? "lg:opacity-100 lg:visible lg:translate-x-0" : "lg:opacity-0 lg:invisible lg:-translate-x-10"
+                  }`}
               >
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 mb-4">
@@ -174,7 +269,7 @@ export function LoginPage() {
                   <p className="text-gray-600">Join us and start shopping</p>
                 </div>
 
-                <form className="space-y-5">
+                <form onSubmit={handleSignup} className="space-y-5">
                   <div>
                     <Label htmlFor="signup-name">Full Name</Label>
                     <div className="relative mt-2">
@@ -182,6 +277,7 @@ export function LoginPage() {
                       <Input
                         id="signup-name"
                         type="text"
+                        onChange={handleSignupChange}
                         placeholder="John Doe"
                         className="pl-10 h-12 border-purple-200 focus:ring-purple-500"
                       />
@@ -195,6 +291,7 @@ export function LoginPage() {
                       <Input
                         id="signup-email"
                         type="email"
+                        onChange={handleSignupChange}
                         placeholder="you@example.com"
                         className="pl-10 h-12 border-purple-200 focus:ring-purple-500"
                       />
@@ -208,6 +305,7 @@ export function LoginPage() {
                       <Input
                         id="signup-password"
                         type={showPassword ? "text" : "password"}
+                        onChange={handleSignupChange}
                         placeholder="••••••••"
                         className="pl-10 pr-10 h-12 border-purple-200 focus:ring-purple-500"
                       />
@@ -232,6 +330,7 @@ export function LoginPage() {
                       <Input
                         id="signup-confirm-password"
                         type={showPassword ? "text" : "password"}
+                        onChange={handleSignupChange}
                         placeholder="••••••••"
                         className="pl-10 h-12 border-purple-200 focus:ring-purple-500"
                       />
@@ -321,15 +420,13 @@ export function LoginPage() {
 
           {/* Sliding Overlay Panel */}
           <div
-            className={`hidden lg:block absolute top-0 bottom-0 w-1/2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 transition-all duration-700 ease-in-out ${
-              isSignUp ? "left-0 rounded-r-[40px]" : "left-1/2 rounded-l-[40px]"
-            }`}
+            className={`hidden lg:block absolute top-0 bottom-0 w-1/2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 transition-all duration-700 ease-in-out ${isSignUp ? "left-0 rounded-r-[40px]" : "left-1/2 rounded-l-[40px]"
+              }`}
           >
             <div className="h-full flex items-center justify-center p-12 text-white">
               <div
-                className={`text-center transition-all duration-700 ${
-                  isSignUp ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"
-                }`}
+                className={`text-center transition-all duration-700 ${isSignUp ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"
+                  }`}
               >
                 {isSignUp && (
                   <div className="space-y-6">
@@ -355,9 +452,8 @@ export function LoginPage() {
               </div>
 
               <div
-                className={`text-center transition-all duration-700 absolute ${
-                  !isSignUp ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"
-                }`}
+                className={`text-center transition-all duration-700 absolute ${!isSignUp ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"
+                  }`}
               >
                 {!isSignUp && (
                   <div className="space-y-6">
@@ -394,5 +490,5 @@ export function LoginPage() {
         </div>
       </div>
     </div>
-  );
+    ) );
 }
