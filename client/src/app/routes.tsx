@@ -10,6 +10,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { SalePage } from "./pages/SalePage";
 import { BrandsPage } from "./pages/BrandsPage";
 import { OrderConfirmationPage } from "./pages/OrderConfirmationPage";
+import ForgotPassword from "./pages/forgetPasswordPage";
+import ResetPassword from "./pages/ResetPassword";
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +27,8 @@ export const router = createBrowserRouter([
       { path: "brands", element: <BrandsPage /> },
       { path: "sale", element: <SalePage /> },
       { path: "order-confirmation", element: <OrderConfirmationPage /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password/:token", element: <ResetPassword /> },
     ],
   },
   {
