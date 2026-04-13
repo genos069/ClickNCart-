@@ -56,8 +56,8 @@ export function LoginPage() {
       alert("Login successful ✅");
 
       navigate("/"); // redirect to home
-    } catch (error:any) {
-      alert(error.response?.data?.message || "Login failed ❌");
+    } catch (error) {
+      alert("Login failed ❌");
     }
   };
 
@@ -80,30 +80,12 @@ export function LoginPage() {
       alert("Account created ✅");
 
       navigate("/");
-    } catch (error:any) {
-      alert(error.response?.data?.message || "Signup failed ❌");
+    } catch (error) {
+      alert("Signup failed ❌");
     }
   };
 
   return (
-    userInfo ? (
-      <div>
-        <div className="flex items-center gap-2 text-sm text-gray-700">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-medium">{userInfo.name}</span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50">
-              Logout
-            </Button>
-      </div>
-  ): (
-      
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
       <div className="w-full max-w-6xl relative">
         {/* Main Container */}
@@ -490,5 +472,5 @@ export function LoginPage() {
         </div>
       </div>
     </div>
-    ) );
+  );
 }
