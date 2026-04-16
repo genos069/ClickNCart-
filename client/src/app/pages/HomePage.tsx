@@ -5,14 +5,18 @@ import { Badge } from "../components/ui/badge";
 import { ArrowRight, Star, Truck, Shield, Zap, CreditCard } from "lucide-react";
 import { products } from "../data/products";
 import { useEffect, useState } from "react";
+import { getAllProducts } from "../../services/homeServices";
 
 export function HomePage() {
-const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [home, setHome] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const heroSlides = [
     {
       title: "Spring Collection 2026",
-      subtitle: "Discover the latest in tech and lifestyle. Up to 30% off on selected items.",
+      subtitle:
+        "Discover the latest in tech and lifestyle. Up to 30% off on selected items.",
       badge: "Limited Time Offer",
       gradient: "from-blue-900 via-purple-900 to-indigo-900",
     },
@@ -38,19 +42,38 @@ const [currentSlide, setCurrentSlide] = useState(0);
     return () => clearInterval(timer);
   }, []);
 
-  const featuredProducts = products.slice(0, 4);
-  const trendingProducts = products.slice(4, 8);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await getAllProducts();
+        setHome(data);
+      } catch (error) {
+        console.error("Failed to fetch products", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const featuredProducts = Array.isArray(home) ? home.slice(9, 19) : [];
+  const trendingProducts = Array.isArray(home) ? home.slice(21, 25) : [];
+
+  if (loading) {
+    return <div className="text-center py-20">Loading...</div>;
+  }
 
   return (
     <div>
       {/* Hero Section - Design 1: Full-width with overlay */}
       <section className="relative h-[600px] overflow-hidden">
-        <div 
+        <div
           className="flex flex-col transition-transform duration-1000 ease-in-out h-full"
           style={{ transform: `translateY(-${currentSlide * 100}%)` }}
         >
           {heroSlides.map((slide, index) => (
-            <div 
+            <div
               key={index}
               className={`relative min-h-[600px] bg-gradient-to-br ${slide.gradient} flex-shrink-0`}
             >
@@ -60,19 +83,22 @@ const [currentSlide, setCurrentSlide] = useState(0);
                   <Badge className="mb-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 border-0">
                     {slide.badge}
                   </Badge>
-                  <h1 className="text-5xl md:text-6xl mb-6">
-                    {slide.title}
-                  </h1>
-                  <p className="text-xl mb-8 text-blue-100">
-                    {slide.subtitle}
-                  </p>
+                  <h1 className="text-5xl md:text-6xl mb-6">{slide.title}</h1>
+                  <p className="text-xl mb-8 text-blue-100">{slide.subtitle}</p>
                   <div className="flex flex-wrap gap-4">
                     <Link to="/shop">
-                      <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
+                      <Button
+                        size="lg"
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
+                      >
                         Shop Now <ArrowRight className="ml-2 w-5 h-5" />
                       </Button>
                     </Link>
-                    <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-900 bg-transparent">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="text-white border-white hover:bg-white hover:text-blue-900 bg-transparent"
+                    >
                       Explore Collection
                     </Button>
                   </div>
@@ -89,8 +115,8 @@ const [currentSlide, setCurrentSlide] = useState(0);
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`w-3 h-3 rounded-full transition-all ${
-                currentSlide === index 
-                  ? "bg-white w-8" 
+                currentSlide === index
+                  ? "bg-white w-8"
                   : "bg-white/50 hover:bg-white/75"
               }`}
               aria-label={`Go to slide ${index + 1}`}
@@ -148,11 +174,16 @@ const [currentSlide, setCurrentSlide] = useState(0);
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Featured Products</h2>
+              <h2 className="text-3xl mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Featured Products
+              </h2>
               <p className="text-gray-600">Handpicked items just for you</p>
             </div>
             <Link to="/shop">
-              <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+              <Button
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
                 View All <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
@@ -174,17 +205,23 @@ const [currentSlide, setCurrentSlide] = useState(0);
                     )}
                   </div>
                   <div className="p-4">
-                    <p className="text-xs text-blue-600 mb-1 font-semibold">{product.category}</p>
+                    <p className="text-xs text-blue-600 mb-1 font-semibold">
+                      {product.category}
+                    </p>
                     <h3 className="font-semibold mb-2 group-hover:text-blue-600 transition-colors">
                       {product.name}
                     </h3>
                     <div className="flex items-center gap-1 mb-2">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                       <span className="text-sm">{product.rating}</span>
-                      <span className="text-xs text-gray-500">({product.reviews})</span>
+                      <span className="text-xs text-gray-500">
+                        ({product.reviews})
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold text-blue-600">${product.price}</span>
+                      <span className="text-lg font-semibold text-blue-600">
+                        ${product.price}
+                      </span>
                       {product.originalPrice && (
                         <span className="text-sm text-gray-500 line-through">
                           ${product.originalPrice}
@@ -213,9 +250,14 @@ const [currentSlide, setCurrentSlide] = useState(0);
               <div className="absolute bottom-0 left-0 p-8 text-white">
                 <h3 className="text-3xl mb-2">Smart Wearables</h3>
                 <p className="mb-4 text-blue-100">Track your fitness goals</p>
-                <Button variant="outline" className="text-white bg-transparent border-white hover:bg-white hover:text-blue-900">
-                  Shop Wearables <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
+                <Link to="/shop?search=wearable">
+                  <Button
+                    variant="outline"
+                    className="text-white bg-transparent border-white hover:bg-white hover:text-blue-900"
+                  >
+                    Shop Wearables <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
               </div>
             </div>
             <div className="relative h-80 rounded-2xl overflow-hidden group cursor-pointer">
@@ -228,9 +270,14 @@ const [currentSlide, setCurrentSlide] = useState(0);
               <div className="absolute bottom-0 left-0 p-8 text-white">
                 <h3 className="text-3xl mb-2">Photography Gear</h3>
                 <p className="mb-4 text-purple-100">Capture every moment</p>
-                <Button variant="outline" className="text-white bg-transparent border-white hover:bg-white hover:text-purple-900">
-                  Shop Cameras <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
+                <Link to="/shop?search=cameras">
+                  <Button
+                    variant="outline"
+                    className="text-white bg-transparent border-white hover:bg-white hover:text-purple-900"
+                  >
+                    Shop Cameras <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -241,9 +288,12 @@ const [currentSlide, setCurrentSlide] = useState(0);
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Trending Now</h2>
+            <h2 className="text-3xl mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Trending Now
+            </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Discover what's hot right now. These products are flying off the shelves.
+              Discover what's hot right now. These products are flying off the
+              shelves.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -260,7 +310,9 @@ const [currentSlide, setCurrentSlide] = useState(0);
                   <h4 className="text-sm font-semibold mb-1 group-hover:text-blue-600 transition-colors">
                     {product.name}
                   </h4>
-                  <p className="text-sm font-semibold text-blue-600">${product.price}</p>
+                  <p className="text-sm font-semibold text-blue-600">
+                    ${product.price}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -268,8 +320,8 @@ const [currentSlide, setCurrentSlide] = useState(0);
           {/* see more button */}
           <div className="text-center mt-10">
             <Link to="/shop">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="lg"
                 className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 group"
               >
@@ -286,7 +338,8 @@ const [currentSlide, setCurrentSlide] = useState(0);
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl mb-4">Stay in the Loop</h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Subscribe to our newsletter for exclusive deals, new arrivals, and tech tips.
+            Subscribe to our newsletter for exclusive deals, new arrivals, and
+            tech tips.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
             <input
@@ -294,7 +347,10 @@ const [currentSlide, setCurrentSlide] = useState(0);
               placeholder="Enter your email"
               className="flex-1 px-6 py-2 rounded-lg bg-white/10 backdrop-blur text-white placeholder:text-blue-200 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
             />
-            <Button size="lg" className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 border-0 text-white">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 border-0 text-white"
+            >
               Subscribe
             </Button>
           </div>
