@@ -28,3 +28,15 @@ export const applyPromo = (code, token) =>
       headers: { Authorization: `Bearer ${token}` },
     }
   );
+
+export const updateCart = async (
+  productId,
+  quantity,
+  token
+) => API.patch(
+  "/cart/update",
+  { productId, quantity },
+  {
+    headers: { Authorization: `Bearer ${token}` },
+  }
+);
