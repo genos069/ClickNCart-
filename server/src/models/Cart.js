@@ -23,6 +23,10 @@ const cartSchema = new mongoose.Schema(
     promoCode: {
       type: String,
     },
+    shippingMethod: {
+      type: String,
+      default: "standard",
+    },
   },
   { timestamps: true }
 );

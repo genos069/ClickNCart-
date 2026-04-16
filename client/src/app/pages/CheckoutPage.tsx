@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -7,17 +7,44 @@ import { Label } from "../components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Checkbox } from "../components/ui/checkbox";
 import { Lock, CreditCard, Truck, Package, CheckCircle2 } from "lucide-react";
+import { getCart } from "../../services/cartServices";
+import { updateShippingMethod } from "../../services/cartServices";
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<"shipping" | "payment" | "review">("shipping");
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [cartData, setCartData] = useState({
+    items: [],
+    subtotal: 0,
+    shipping: 0,
+    tax: 0,
+    discount: 0,
+    discountAmount: 0,
+    total: 0,
+  });
 
-  const subtotal = 956;
-  const shipping = 0;
-  const tax = 76.48;
-  const total = subtotal + shipping + tax;
+  const [loading, setLoading] = useState(true);
+
+  const user = JSON.parse(localStorage.getItem("userInfo") || "null");
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const { data } = await getCart(user.token);
+        setCartData(data);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) fetchCart();
+  }, []);
+
+  if (loading) return <p className="text-center mt-10">Loading...</p>;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -26,27 +53,24 @@ export function CheckoutPage() {
         <div className="mb-8">
           <div className="flex items-center justify-center gap-4 mb-8">
             <div className={`flex items-center gap-2 ${step === "shipping" ? "text-blue-600" : "text-gray-400"}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                step === "shipping" ? "border-blue-600 bg-gradient-to-br from-blue-600 to-purple-600 text-white" : "border-gray-300"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step === "shipping" ? "border-blue-600 bg-gradient-to-br from-blue-600 to-purple-600 text-white" : "border-gray-300"
+                }`}>
                 1
               </div>
               <span className="hidden sm:inline font-semibold">Shipping</span>
             </div>
             <div className="w-12 h-0.5 bg-gray-300" />
             <div className={`flex items-center gap-2 ${step === "payment" ? "text-blue-600" : "text-gray-400"}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                step === "payment" ? "border-blue-600 bg-gradient-to-br from-blue-600 to-purple-600 text-white" : "border-gray-300"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step === "payment" ? "border-blue-600 bg-gradient-to-br from-blue-600 to-purple-600 text-white" : "border-gray-300"
+                }`}>
                 2
               </div>
               <span className="hidden sm:inline font-semibold">Payment</span>
             </div>
             <div className="w-12 h-0.5 bg-gray-300" />
             <div className={`flex items-center gap-2 ${step === "review" ? "text-blue-600" : "text-gray-400"}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                step === "review" ? "border-blue-600 bg-gradient-to-br from-blue-600 to-purple-600 text-white" : "border-gray-300"
-              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step === "review" ? "border-blue-600 bg-gradient-to-br from-blue-600 to-purple-600 text-white" : "border-gray-300"
+                }`}>
                 3
               </div>
               <span className="hidden sm:inline font-semibold">Review</span>
@@ -109,7 +133,16 @@ export function CheckoutPage() {
 
                   <div>
                     <Label className="mb-3 block">Shipping Method</Label>
-                    <RadioGroup value={shippingMethod} onValueChange={setShippingMethod}>
+                    <RadioGroup value={shippingMethod}
+                      onValueChange={async (value) => {
+                        setShippingMethod(value);
+                        try {
+                          const { data } = await updateShippingMethod(value, user.token);
+                          setCartData(data); // 🔥 updates totals from backend
+                        } catch (err) {
+                          console.log(err);
+                        }
+                      }}>
                       <Card className="p-4 mb-3 cursor-pointer hover:border-blue-600 transition-colors border border-blue-100">
                         <div className="flex items-center gap-3">
                           <RadioGroupItem value="standard" id="standard" />
@@ -262,9 +295,9 @@ export function CheckoutPage() {
                   <Button type="button" variant="outline" size="lg" className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50" onClick={() => setStep("payment")}>
                     Back
                   </Button>
-                  <Button 
-                    type="button" 
-                    size="lg" 
+                  <Button
+                    type="button"
+                    size="lg"
                     className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     onClick={() => navigate("/order-confirmation")}
                   >
@@ -280,52 +313,51 @@ export function CheckoutPage() {
           <div className="lg:col-span-1">
             <Card className="p-6 sticky top-24 border border-blue-100">
               <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Order Summary</h3>
-              
+
               <div className="space-y-4 mb-6 pb-6 border-b">
-                <div className="flex gap-4">
-                  <img
-                    src="https://images.unsplash.com/photo-1713618651165-a3cf7f85506c?w=100"
-                    alt="Product"
-                    className="w-16 h-16 object-cover rounded-lg bg-gray-100"
-                  />
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">Premium Wireless Headphones</p>
-                    <p className="text-sm text-gray-600">Qty: 1</p>
-                    <p className="text-sm font-semibold">$299</p>
+                {cartData.items.map((item: any) => (
+                  <div key={item.productId} className="flex gap-4">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded-lg bg-gray-100"
+                    />
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm">{item.name}</p>
+                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                      <p className="text-sm font-semibold">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-4">
-                  <img
-                    src="https://images.unsplash.com/photo-1523394373826-0b47f5d8d30f?w=100"
-                    alt="Product"
-                    className="w-16 h-16 object-cover rounded-lg bg-gray-100"
-                  />
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">Smart Watch Pro</p>
-                    <p className="text-sm text-gray-600">Qty: 2</p>
-                    <p className="text-sm font-semibold">$798</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               <div className="space-y-3 mb-6 pb-6 border-b">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">${cartData.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className="font-semibold text-green-600">FREE</span>
+                  <span className="font-semibold text-green-600">{cartData.shipping === 0 ? "FREE" : `$${cartData.shipping.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span className="font-semibold">${tax.toFixed(2)}</span>
+                  <span className="font-semibold">${cartData.tax.toFixed(2)}</span>
                 </div>
               </div>
 
+              {cartData.discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount</span>
+                  <span>- ${cartData.discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-xl mb-6">
                 <span className="font-semibold">Total</span>
-                <span className="font-semibold">${total.toFixed(2)}</span>
+                <span className="font-semibold">${cartData.total.toFixed(2)}</span>
               </div>
 
               <div className="space-y-2 text-sm text-gray-600">
@@ -346,6 +378,6 @@ export function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

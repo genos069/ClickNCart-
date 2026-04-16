@@ -213,3 +213,48 @@ export const updateCartItem = async (req, res) => {
     total,
   });
 };
+
+// UPDATE SHIPPING METHOD
+export const updateShipping = async (req, res) => {
+  const { method } = req.body;
+
+  const cart = await Cart.findOne({ user: req.user._id });
+
+  if (!cart) {
+    return res.status(404).json({ message: "Cart not found" });
+  }
+
+  cart.shippingMethod = method;
+
+  // 🧠 Recalculate totals
+  const subtotal = cart.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  // 🚚 SHIPPING LOGIC
+  let shipping = 0;
+
+  if (method === "express") {
+    shipping = 15;
+  } else {
+    shipping = subtotal > 100 ? 0 : 15;
+  }
+
+  const tax = subtotal * 0.08;
+  const discountAmount = (subtotal * cart.discount) / 100;
+  const total = subtotal + shipping + tax - discountAmount;
+
+  await cart.save();
+
+  res.json({
+    items: cart.items,
+    subtotal,
+    shipping,
+    tax,
+    discount: cart.discount,
+    discountAmount,
+    total,
+    shippingMethod: cart.shippingMethod,
+  });
+};

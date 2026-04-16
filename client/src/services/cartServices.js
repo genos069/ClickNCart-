@@ -29,14 +29,19 @@ export const applyPromo = (code, token) =>
     }
   );
 
-export const updateCart = async (
-  productId,
-  quantity,
-  token
-) => API.patch(
+export const updateCart = (productId, quantity, token) => API.patch(
   "/cart/update",
   { productId, quantity },
   {
     headers: { Authorization: `Bearer ${token}` },
   }
 );
+
+export const updateShippingMethod = (method, token) => API.put(
+    "/api/cart/shipping",
+    { method },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+;
