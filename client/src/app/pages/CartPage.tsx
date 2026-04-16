@@ -31,6 +31,7 @@ export function CartPage() {
 
         const { data } = await getCart(user.token);
         setCartItems(data.items || []);
+        localStorage.setItem("cartCount", data.items.length);
       } catch (error) {
         console.log(error);
       }
@@ -65,6 +66,7 @@ export function CartPage() {
       );
 
       setCartItems(data.items);
+      localStorage.setItem("cartCount", data.items.length);
     } catch (error) {
       console.log(error);
     }
@@ -90,6 +92,7 @@ export function CartPage() {
     try {
       const { data } = await removeFromCart(productId, user.token);
       setCartItems(data.items);
+      localStorage.setItem("cartCount", data.items.length);
     } catch (error) {
       console.log(error);
     }

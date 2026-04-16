@@ -2,11 +2,16 @@ import { Outlet, Link, useLocation } from "react-router";
 import { ShoppingCart, Search, Menu, User, Heart } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function Layout() {
   const location = useLocation();
-  const [cartCount] = useState(3);
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const count = localStorage.getItem("cartCount");
+    setCartCount(count ? Number(count) : 0);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
