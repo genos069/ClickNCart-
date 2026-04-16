@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { ShoppingCart, Search, Menu, User, Heart } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { searchProducts } from "../../services/productServices";
 import { useNavigate } from "react-router-dom";
 
@@ -21,6 +21,13 @@ export function Layout() {
       console.error("Search failed:", error);
     }
   };
+  
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const count = localStorage.getItem("cartCount");
+    setCartCount(count ? Number(count) : 0);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

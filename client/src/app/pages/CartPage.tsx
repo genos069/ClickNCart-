@@ -1,34 +1,123 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { X, Plus, Minus, ShoppingBag, ArrowRight, Tag } from "lucide-react";
 import { products } from "../data/products";
+import {
+  getCart,
+  removeFromCart,
+  clearCart,
+  addToCart,
+  applyPromo,
+} from "../../services/cartServices";
 
 export function CartPage() {
-  const [cartItems, setCartItems] = useState([
-    { ...products[0], quantity: 1 },
-    { ...products[2], quantity: 2 },
-    { ...products[6], quantity: 1 },
-  ]);
+
   const [promoCode, setPromoCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [cartItems, setCartItems] = useState<any[]>([]);
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    setCartItems(items =>
-      items.map(item => (item.id === id ? { ...item, quantity: newQuantity } : item))
+  // ✅ Get user
+  const user = JSON.parse(localStorage.getItem("userInfo") || "null");
+
+
+  // 🟢 FETCH CART FROM BACKEND
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        if (!user) return;
+
+        const { data } = await getCart(user.token);
+        setCartItems(data.items || []);
+        localStorage.setItem("cartCount", data.items.length);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
+  const handleApplyPromo = async () => {
+    try {
+      const { data } = await applyPromo(promoCode, user.token);
+
+      setDiscount(data.discount);
+
+      alert("Promo applied ✅");
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Invalid code ❌");
+    }
+  };
+
+
+  // ➕ INCREASE QUANTITY
+  const increaseQuantity = async (item: any) => {
+    try {
+      const { data } = await addToCart(
+        {
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+        },
+        user.token
+      );
+
+      setCartItems(data.items);
+      localStorage.setItem("cartCount", data.items.length);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  // ➖ DECREASE QUANTITY (Frontend Adjust OR Backend API if you add later)
+  const decreaseQuantity = async (item: any) => {
+    if (item.quantity <= 1) return;
+
+    const updated = cartItems.map((i) =>
+      i.productId === item.productId
+        ? { ...i, quantity: i.quantity - 1 }
+        : i
     );
+
+    setCartItems(updated);
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+
+  // ❌ REMOVE ITEM
+  const handleRemove = async (productId: string) => {
+    try {
+      const { data } = await removeFromCart(productId, user.token);
+      setCartItems(data.items);
+      localStorage.setItem("cartCount", data.items.length);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // 💰 CALCULATIONS
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
   const shipping = subtotal > 100 ? 0 : 15;
   const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+
+  // 🟢 APPLY DISCOUNT
+  let discountAmount = 0;
+
+  // 👉 If percentage (recommended)
+  discountAmount = (subtotal * discount) / 100;
+
+  // 👉 If flat discount (use this instead if needed)
+  // discountAmount = discount;
+
+  const total = subtotal + shipping + tax - discountAmount;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -68,7 +157,7 @@ export function CartPage() {
                         </h3>
                       </Link>
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => handleRemove(item.productId)}
                         className="text-gray-400 hover:text-red-600 transition-colors"
                       >
                         <X className="w-5 h-5" />
@@ -78,14 +167,14 @@ export function CartPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center border border-blue-200 rounded-lg">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => decreaseQuantity(item)}
                           className="p-2 hover:bg-blue-50 transition-colors"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <span className="px-4 py-2 border-x border-blue-200 font-semibold">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() => increaseQuantity(item)}
                           className="p-2 hover:bg-blue-50 transition-colors"
                         >
                           <Plus className="w-4 h-4" />
@@ -115,7 +204,10 @@ export function CartPage() {
                   onChange={(e) => setPromoCode(e.target.value)}
                   className="flex-1 border-blue-200 focus:ring-blue-500"
                 />
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">Apply</Button>
+                <Button
+                  disabled={!promoCode}
+                  onClick={handleApplyPromo}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">Apply</Button>
               </div>
             </Card>
           </div>
@@ -124,7 +216,7 @@ export function CartPage() {
           <div className="lg:col-span-1">
             <Card className="p-6 sticky top-24 border border-blue-100">
               <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Order Summary</h2>
-              
+
               <div className="space-y-4 mb-6 pb-6 border-b">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
@@ -145,7 +237,12 @@ export function CartPage() {
                   <span className="font-semibold">${tax.toFixed(2)}</span>
                 </div>
               </div>
-
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount</span>
+                  <span>- ${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between mb-6 text-xl">
                 <span className="font-semibold">Total</span>
                 <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${total.toFixed(2)}</span>
@@ -156,7 +253,7 @@ export function CartPage() {
                   Proceed to Checkout <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              
+
               <Link to="/shop">
                 <Button variant="outline" size="lg" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
                   Continue Shopping
