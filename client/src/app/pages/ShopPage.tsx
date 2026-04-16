@@ -1,41 +1,109 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
 import { Label } from "../components/ui/label";
 import { Slider } from "../components/ui/slider";
+
 import { Star, Grid3x3, List, SlidersHorizontal } from "lucide-react";
+
 import { products } from "../data/products";
+import { searchProducts } from "../../services/productServices";
 
 export function ShopPage() {
+  // Shop Page
+
+  const [apiProducts, setApiProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [priceRange, setPriceRange] = useState([0, 3000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("featured");
 
-  const categories = Array.from(new Set(products.map(p => p.category)));
+  const location = useLocation();
+
+  // =========================
+  // FETCH FROM BACKEND (Code 2 logic)
+  // =========================
+  useEffect(() => {
+    const fetchData = async () => {
+      const params = new URLSearchParams(location.search);
+      const search = params.get("search");
+
+      if (!search) return;
+
+      try {
+        setLoading(true);
+
+        const data = await searchProducts({ search });
+
+        setApiProducts(
+          data.data.map((p: any) => ({
+            ...p,
+            id: p._id || p.id,
+          })),
+        );
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [location.search]);
+
+  // =========================
+  // FALLBACK DATA
+  // =========================
+  const baseProducts = apiProducts.length > 0 ? apiProducts : products;
+
+  // =========================
+  // FILTERS (Code 2 logic + Code 1 richness)
+  // =========================
+  const categories = Array.from(new Set(products.map((p) => p.category)));
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories(prev =>
+    setSelectedCategories((prev) =>
       prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
     );
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category);
-    const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+  const filteredProducts = baseProducts.filter((product) => {
+    const matchesCategory =
+      selectedCategories.length === 0 ||
+      selectedCategories.includes(product.category);
+
+    const matchesPrice =
+      product.price >= priceRange[0] && product.price <= priceRange[1];
+
     return matchesCategory && matchesPrice;
   });
+
+  // =========================
+  // LOADING UI
+  // =========================
+  if (loading) {
+    return (
+      <p className="text-center py-10 text-lg font-medium">
+        Loading products...
+      </p>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl mb-2">Shop All Products</h1>
-        <p className="text-gray-600">Discover our complete collection of premium products</p>
+        <p className="text-gray-600">
+          Discover our complete collection of premium products
+        </p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -51,14 +119,17 @@ export function ShopPage() {
             <div className="mb-6">
               <h3 className="font-semibold mb-3">Categories</h3>
               <div className="space-y-2">
-                {categories.map(category => (
+                {categories.map((category) => (
                   <div key={category} className="flex items-center gap-2">
                     <Checkbox
                       id={category}
                       checked={selectedCategories.includes(category)}
                       onCheckedChange={() => toggleCategory(category)}
                     />
-                    <Label htmlFor={category} className="text-sm cursor-pointer">
+                    <Label
+                      htmlFor={category}
+                      className="text-sm cursor-pointer"
+                    >
                       {category}
                     </Label>
                   </div>
@@ -86,10 +157,16 @@ export function ShopPage() {
             <div className="mb-6">
               <h3 className="font-semibold mb-3">Rating</h3>
               <div className="space-y-2">
-                {[5, 4, 3].map(rating => (
-                  <div key={rating} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                {[5, 4, 3].map((rating) => (
+                  <div
+                    key={rating}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+                  >
                     <Checkbox id={`rating-${rating}`} />
-                    <Label htmlFor={`rating-${rating}`} className="flex items-center gap-1 cursor-pointer">
+                    <Label
+                      htmlFor={`rating-${rating}`}
+                      className="flex items-center gap-1 cursor-pointer"
+                    >
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       <span className="text-sm">{rating}+</span>
                     </Label>
@@ -109,7 +186,12 @@ export function ShopPage() {
               </div>
             </div>
 
-            <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" variant="outline">Clear All Filters</Button>
+            <Button
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              variant="outline"
+            >
+              Clear All Filters
+            </Button>
           </Card>
         </aside>
 
@@ -118,7 +200,9 @@ export function ShopPage() {
           {/* Toolbar - Design 8: Sort and view options */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b">
             <p className="text-sm text-gray-600">
-              Showing <span className="font-semibold">{filteredProducts.length}</span> products
+              Showing{" "}
+              <span className="font-semibold">{filteredProducts.length}</span>{" "}
+              products
             </p>
 
             <div className="flex items-center gap-4">
@@ -179,17 +263,23 @@ export function ShopPage() {
                       )}
                     </div>
                     <div className="p-4">
-                      <p className="text-xs text-blue-600 mb-1 font-semibold">{product.category}</p>
+                      <p className="text-xs text-blue-600 mb-1 font-semibold">
+                        {product.category}
+                      </p>
                       <h3 className="font-semibold mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
                         {product.name}
                       </h3>
                       <div className="flex items-center gap-1 mb-2">
                         <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                         <span className="text-sm">{product.rating}</span>
-                        <span className="text-xs text-gray-500">({product.reviews})</span>
+                        <span className="text-xs text-gray-500">
+                          ({product.reviews})
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold text-blue-600">${product.price}</span>
+                        <span className="text-lg font-semibold text-blue-600">
+                          ${product.price}
+                        </span>
                         {product.originalPrice && (
                           <span className="text-sm text-gray-500 line-through">
                             ${product.originalPrice}
@@ -224,7 +314,9 @@ export function ShopPage() {
                       </div>
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
-                          <p className="text-xs text-blue-600 mb-1 font-semibold">{product.category}</p>
+                          <p className="text-xs text-blue-600 mb-1 font-semibold">
+                            {product.category}
+                          </p>
                           <h3 className="text-xl font-semibold mb-2 group-hover:text-blue-600 transition-colors">
                             {product.name}
                           </h3>
@@ -234,19 +326,25 @@ export function ShopPage() {
                           <div className="flex items-center gap-1 mb-3">
                             <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                             <span className="text-sm">{product.rating}</span>
-                            <span className="text-xs text-gray-500">({product.reviews} reviews)</span>
+                            <span className="text-xs text-gray-500">
+                              ({product.reviews} reviews)
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl font-semibold text-blue-600">${product.price}</span>
+                            <span className="text-2xl font-semibold text-blue-600">
+                              ${product.price}
+                            </span>
                             {product.originalPrice && (
                               <span className="text-sm text-gray-500 line-through">
                                 ${product.originalPrice}
                               </span>
                             )}
                           </div>
-                          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">Add to Cart</Button>
+                          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                            Add to Cart
+                          </Button>
                         </div>
                       </div>
                     </div>
