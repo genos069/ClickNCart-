@@ -1,10 +1,10 @@
-import { Outlet, Link, useLocation } from "react-router";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import { ShoppingCart, Search, Menu, User, Heart } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { searchProducts } from "../../services/productServices";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 export function Layout() {
   const location = useLocation();

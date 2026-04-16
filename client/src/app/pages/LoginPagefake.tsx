@@ -1,11 +1,11 @@
 
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button.js";
 import { Input } from "../components/ui/input.js";
 import { Label } from "../components/ui/label.js";
 import { ShoppingCart, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../../services/authServices.js";
 
 export function LoginPage() {

@@ -1,10 +1,14 @@
+import mongoose from "mongoose";
 import Product from "../models/Product.js";
-
+import Brand from "../models/Brand.js";
 
 export const createProduct = async (req, res) => {
+  console.log("🔥 CONTROLLER HIT");
+  console.log("BODY:", req.body);
   try {
     const {
       name,
+      brand,
       price,
       originalPrice,
       image,
@@ -14,31 +18,49 @@ export const createProduct = async (req, res) => {
       inStock,
     } = req.body;
 
-    // Basic validation
-    if (!name || !price || !image || !category || !description) {
+    if (!name || !price || !image || !category || !description || !brand) {
       return res.status(400).json({
         success: false,
         message: "Required fields are missing",
       });
     }
 
-    const exists = await Product.findOne({ name });
+    // 🔥 AUTO CREATE OR FIND BRAND
+    let brandDoc;
+
+    if (brand) {
+      brandDoc = await Brand.findOne({ name: brand });
+    }
+
+    if (!brandDoc) {
+      return res.status(400).json({ message: "Provided brand is not exist" });
+    }
+
+    const exists = await Product.findOne({
+      name,
+      brand: brandDoc._id,
+    });
+
     if (exists) {
       return res.status(400).json({ message: "Product already exists" });
     }
 
-    const discount = ((originalPrice - price) / originalPrice) * 100;
+    let discount = 0;
+    if (originalPrice && originalPrice > price) {
+      discount = Number(
+        (((originalPrice - price) / originalPrice) * 100).toFixed(2),
+      );
+    }
 
-    // Create product
     const product = await Product.create({
       name,
+      brand: brandDoc._id,
       price,
       originalPrice,
       image,
       category,
-      rating: rating ?? 0, // default if not provided
       description,
-      features: features || [],
+      features: Array.isArray(features) ? features : [],
       inStock: inStock ?? true,
       discount,
     });
@@ -56,7 +78,6 @@ export const createProduct = async (req, res) => {
     });
   }
 };
-
 
 export const getProducts = async (req, res) => {
   try {
@@ -133,41 +154,64 @@ export const getProducts = async (req, res) => {
   }
 };
 
-
 export const editProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
     const product = await Product.findById(id);
-
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found"
+        message: "Product not found",
       });
     }
 
-    // Only update fields that exist in request body
-    Object.keys(req.body).forEach((key) => {
-      product[key] = req.body[key];
-    });
+    // ❌ prevent unsafe fields
+    const unsafeFields = ["_id", "createdAt", "updatedAt"];
+    unsafeFields.forEach((f) => delete req.body[f]);
+
+    // validate brand if updated
+    if (req.body.brand) {
+      const brandExists = await Brand.findById(req.body.brand);
+      if (!brandExists) {
+        return res.status(404).json({
+          success: false,
+          message: "Brand not found",
+        });
+      }
+    }
+
+    Object.assign(product, req.body);
+
+    // recalc discount if prices updated
+    if (product.originalPrice && product.price) {
+      product.discount =
+        product.originalPrice > product.price
+          ? Number(
+              (
+                ((product.originalPrice - product.price) /
+                  product.originalPrice) *
+                100
+              ).toFixed(2),
+            )
+          : 0;
+    }
 
     const updated = await product.save();
 
     return res.status(200).json({
       success: true,
-      message: "Product partially updated",
-      data: updated
+      message: "Product updated successfully",
+      data: updated,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Server error",
-      error: error.message
+      error: error.message,
     });
   }
 };
-
 
 export const seedProduct = async (req, res) => {
   try {
@@ -180,42 +224,102 @@ export const seedProduct = async (req, res) => {
       });
     }
 
-    const formattedProducts = [];
+    // 1. validate + collect brand names (ORIGINAL case)
+    const brandNames = new Set();
 
     for (const p of products) {
-      if (!p.name || !p.price || !p.image || !p.category || !p.description) {
-        throw new Error("Missing required fields in one of the products");
+      if (
+        !p.name ||
+        !p.price ||
+        !p.image ||
+        !p.category ||
+        !p.description ||
+        !p.brand
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields",
+        });
       }
 
-      // check if exists
-      const exists = await Product.findOne({ name: p.name });
+      brandNames.add(p.brand.trim()); // ✅ keep original case
+    }
 
-      if (exists) {
-        continue; // skip existing product
-      }
+    const brandArray = [...brandNames];
 
-      const discount =
-        p.originalPrice && p.price
-          ? ((p.originalPrice - p.price) / p.originalPrice) * 100
-          : 0;
+    // 2. fetch existing brands (case-insensitive)
+    const existingBrands = await Brand.find({
+      name: { $in: brandArray },
+    });
 
-      formattedProducts.push({
-        name: p.name,
-        price: p.price,
-        originalPrice: p.originalPrice,
-        image: p.image,
-        category: p.category,
-        description: p.description,
-        features: p.features || [],
-        inStock: p.inStock ?? true,
-        rating: p.rating ?? 0,
-        discount,
+    // 3. create map using LOWERCASE key for matching
+    const brandMap = new Map();
+
+    existingBrands.forEach((b) => {
+      brandMap.set(b.name.toLowerCase(), b._id);
+    });
+
+    // 4. find missing brands (case-insensitive)
+    const brandsToCreate = brandArray
+      .filter((name) => !brandMap.has(name.toLowerCase()))
+      .map((name) => ({
+        name: name, // ✅ keep original casing
+      }));
+
+    if (brandsToCreate.length) {
+      const created = await Brand.insertMany(brandsToCreate);
+
+      created.forEach((b) => {
+        brandMap.set(b.name.toLowerCase(), b._id);
       });
     }
 
+    // 5. filter existing products
+    const productNames = products.map((p) => p.name);
+
+    const existingProducts = await Product.find({
+      name: { $in: productNames },
+    }).select("name");
+
+    const existingSet = new Set(existingProducts.map((p) => p.name));
+
+    // 6. format products
+    const formattedProducts = products
+      .filter((p) => !existingSet.has(p.name))
+      .map((p) => {
+        const discount =
+          p.originalPrice && p.price
+            ? Number(
+                (((p.originalPrice - p.price) / p.originalPrice) * 100).toFixed(
+                  2,
+                ),
+              )
+            : 0;
+
+        const brandId = brandMap.get(p.brand.trim().toLowerCase());
+
+        if (!brandId) {
+          console.warn("❌ Brand not found:", p.brand);
+        }
+
+        return {
+          name: p.name,
+          price: p.price,
+          originalPrice: p.originalPrice,
+          image: p.image,
+          category: p.category,
+          description: p.description,
+          features: p.features || [],
+          inStock: p.inStock ?? true,
+          brand: brandId, // ✅ always ObjectId
+          discount,
+        };
+      });
+
+    // 7. insert
     const result =
       formattedProducts.length > 0
-        ? await Product.insertMany(formattedProducts)
+        ? await Product.insertMany(formattedProducts, { ordered: false })
         : [];
 
     return res.status(201).json({
@@ -228,6 +332,128 @@ export const seedProduct = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+export const updateProductRating = async (productId) => {
+  const Review = mongoose.model("Review");
+
+  const result = await Review.aggregate([
+    { $match: { product: new mongoose.Types.ObjectId(productId) } },
+    {
+      $group: {
+        _id: "$product",
+        avgRating: { $avg: "$rating" },
+      },
+    },
+  ]);
+
+  const avgRating = result[0]?.avgRating || 0;
+
+  await Product.findByIdAndUpdate(productId, {
+    rating: Number(avgRating.toFixed(1)),
+  });
+};
+
+export const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID",
+      });
+    }
+
+    const product = await Product.findById(id);
+
+    console.log(product);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getRelatedProducts = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const related = await Product.find({
+      category: product.category,
+      _id: { $ne: id }, // exclude current product
+    }).limit(4);
+
+    res.json({
+      success: true,
+      data: related,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// future change
+
+export const getProductsForFrontend = async (req, res) => {
+  try {
+    const products = await Product.find()
+      .populate("brand", "name logo")
+      .sort({ createdAt: -1 });
+
+    const formatted = products.map((p) => ({
+      id: p._id,
+      name: p.name,
+      price: p.price,
+      originalPrice: p.originalPrice,
+      image: p.image,
+      category: p.category,
+      rating: p.rating,
+      description: p.description,
+      features: p.features,
+      inStock: p.inStock,
+      discount: p.discount,
+
+      brand: p.brand
+        ? {
+            id: p.brand._id,
+            name: p.brand.name,
+            logo: p.brand.logo,
+          }
+        : null,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: formatted.length,
+      data: formatted,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch products",
       error: error.message,
     });
   }

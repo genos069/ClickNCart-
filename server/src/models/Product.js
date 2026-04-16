@@ -7,13 +7,19 @@ const productSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+      required: true,
+      index: true,
+    },
+
     price: {
       type: Number,
       required: true,
     },
     originalPrice: {
       type: Number,
-      required: false,
     },
     image: {
       type: String,
@@ -23,14 +29,31 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: [
+        "Accessories",
         "Audio",
-        "Wearables",
+        "Cameras",
         "Computers",
-        "Photography",
-        "Mobile",
-        "Gaming",
-        "Tablets",
+        "Computing",
+        "Display",
         "Fashion",
+        "Gaming",
+        "Health",
+        "Kitchen",
+        "Laptops",
+        "Mobile",
+        "Monitors",
+        "Networking",
+        "Office",
+        "Photography",
+        "Printers",
+        "Smart Home ",
+        "Storage  ",
+        "TVs ",
+        "Tablets ",
+        "Tech  ",
+        "Transport ",
+        "Wearables",
+        "Medical",
       ],
       index: true,
     },
@@ -40,20 +63,6 @@ const productSchema = new mongoose.Schema(
       max: 5,
       default: 0,
     },
-    reviews: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-        review: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Review",
-          required: true,
-        },
-      },
-    ],
     description: {
       type: String,
       required: true,
@@ -79,44 +88,5 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-
-productSchema.pre("save", async function (next) {
-  try {
-    let finalRating = null;
-
-    // 1️⃣ If reviews exist → compute from Review model
-    if (this.reviews && this.reviews.length > 0) {
-      const Review = mongoose.model("Review");
-
-      const reviewIds = this.reviews.map((r) => r.review);
-
-      const result = await Review.aggregate([
-        { $match: { _id: { $in: reviewIds } } },
-        {
-          $group: {
-            _id: null,
-            avgRating: { $avg: "$rating" },
-          },
-        },
-      ]);
-
-      if (result.length > 0) {
-        finalRating = result[0].avgRating;
-      }
-    }
-
-    // 2️⃣ If no reviews OR no rating found → fallback random
-    if (!finalRating) {
-      finalRating = Math.random() * (4.9 - 3.5) + 3.5;
-    }
-
-    // 3️⃣ Save final rating (rounded)
-    this.rating = +finalRating.toFixed(1);
-
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
 
 export default mongoose.model("Product", productSchema);

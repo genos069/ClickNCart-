@@ -1,99 +1,46 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { ArrowRight, Star, Check } from "lucide-react";
-import { products } from "../data/products";
-
-const brands = [
-  {
-    id: 1,
-    name: "TechPro",
-    logo: "TP",
-    description: "Premium audio and computing solutions",
-    products: 24,
-    rating: 4.8,
-    featured: true,
-    color: "from-blue-600 to-blue-700",
-  },
-  {
-    id: 2,
-    name: "SoundWave",
-    logo: "SW",
-    description: "Professional audio equipment",
-    products: 18,
-    rating: 4.9,
-    featured: true,
-    color: "from-purple-600 to-purple-700",
-  },
-  {
-    id: 3,
-    name: "SmartFit",
-    logo: "SF",
-    description: "Wearable technology & fitness",
-    products: 32,
-    rating: 4.7,
-    featured: true,
-    color: "from-pink-600 to-pink-700",
-  },
-  {
-    id: 4,
-    name: "PixelMax",
-    logo: "PM",
-    description: "Photography & imaging",
-    products: 15,
-    rating: 4.9,
-    featured: false,
-    color: "from-orange-600 to-orange-700",
-  },
-  {
-    id: 5,
-    name: "GameZone",
-    logo: "GZ",
-    description: "Gaming accessories",
-    products: 28,
-    rating: 4.6,
-    featured: false,
-    color: "from-green-600 to-green-700",
-  },
-  {
-    id: 6,
-    name: "ElectroCore",
-    logo: "EC",
-    description: "Electronic components",
-    products: 45,
-    rating: 4.8,
-    featured: false,
-    color: "from-indigo-600 to-indigo-700",
-  },
-  {
-    id: 7,
-    name: "VisionTech",
-    logo: "VT",
-    description: "Display & monitor solutions",
-    products: 12,
-    rating: 4.5,
-    featured: false,
-    color: "from-cyan-600 to-cyan-700",
-  },
-  {
-    id: 8,
-    name: "PowerHub",
-    logo: "PH",
-    description: "Charging & power solutions",
-    products: 20,
-    rating: 4.7,
-    featured: false,
-    color: "from-amber-600 to-amber-700",
-  },
-];
+import { fetchBrands } from "../../services/brandService";
+import { fetchProducts } from "../../services/productServices";
 
 export function BrandsPage() {
-  const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
+  const [brands, setBrands] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const featuredBrands = brands.filter(b => b.featured);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        const [brandRes, productRes] = await Promise.all([
+          fetchBrands(),
+          fetchProducts(),
+        ]);
+
+        setBrands(brandRes.data || brandRes);
+        setProducts(productRes.data || productRes);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const featuredBrands = brands.filter((b) => b.featured);
   const allBrands = brands;
+
+  if (loading) {
+    return <div className="text-center py-20 text-gray-500">Loading...</div>;
+  }
 
   return (
     <div>
@@ -118,16 +65,20 @@ export function BrandsPage() {
             <h2 className="text-3xl mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Featured Brands
             </h2>
-            <p className="text-gray-600">Our most popular and trusted partners</p>
+            <p className="text-gray-600">
+              Our most popular and trusted partners
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             {featuredBrands.map((brand) => (
               <Card
-                key={brand.id}
+                key={brand._id || brand.id}
                 className="group relative overflow-hidden border-2 border-blue-100 hover:border-blue-300 shadow-lg hover:shadow-2xl transition-all duration-300"
               >
-                <div className={`h-32 bg-gradient-to-br ${brand.color} relative`}>
+                <div
+                  className={`h-32 bg-gradient-to-br ${brand.color} relative`}
+                >
                   <div className="absolute inset-0 bg-black/20"></div>
                   <div className="absolute top-4 right-4">
                     <Badge className="bg-white/20 backdrop-blur text-white border-0">
@@ -137,12 +88,18 @@ export function BrandsPage() {
                 </div>
                 <div className="p-6">
                   <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-16 h-16 -mt-12 bg-gradient-to-br ${brand.color} rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-lg`}>
+                    <div
+                      className={`w-16 h-16 -mt-12 bg-gradient-to-br ${brand.color} rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-lg`}
+                    >
                       {brand.logo}
                     </div>
                     <div className="flex-1 mt-2">
-                      <h3 className="text-xl font-semibold mb-1">{brand.name}</h3>
-                      <p className="text-sm text-gray-600">{brand.description}</p>
+                      <h3 className="text-xl font-semibold mb-1">
+                        {brand.name}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {brand.description}
+                      </p>
                     </div>
                   </div>
 
@@ -156,15 +113,19 @@ export function BrandsPage() {
                     <div className="text-center">
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                        <p className="text-2xl font-semibold text-gray-900">{brand.rating}</p>
+                        <p className="text-2xl font-semibold text-gray-900">
+                          {brand.rating}
+                        </p>
                       </div>
                       <p className="text-xs text-gray-600">Rating</p>
                     </div>
                   </div>
-
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                    Explore {brand.name} <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
+                  <Link to={`/brands/${brand._id}`}>
+                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                      Explore {brand.name}{" "}
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Button>
+                  </Link>
                 </div>
               </Card>
             ))}
@@ -177,24 +138,30 @@ export function BrandsPage() {
             <h2 className="text-3xl mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               All Brands
             </h2>
-            <p className="text-gray-600">Browse our complete collection of trusted brands</p>
+            <p className="text-gray-600">
+              Browse our complete collection of trusted brands
+            </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {allBrands.map((brand) => (
               <Card
-                key={brand.id}
+                key={brand._id}
                 className="group cursor-pointer border border-blue-100 hover:border-blue-300 hover:shadow-lg transition-all duration-300"
                 onClick={() => setSelectedBrand(brand.id)}
               >
                 <div className="p-6 text-center">
-                  <div className={`w-20 h-20 mx-auto mb-4 bg-gradient-to-br ${brand.color} rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-md group-hover:scale-110 transition-transform`}>
+                  <div
+                    className={`w-20 h-20 mx-auto mb-4 bg-gradient-to-br ${brand.color} rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-md group-hover:scale-110 transition-transform`}
+                  >
                     {brand.logo}
                   </div>
                   <h3 className="font-semibold mb-1 group-hover:text-blue-600 transition-colors">
                     {brand.name}
                   </h3>
-                  <p className="text-xs text-gray-600 mb-2">{brand.products} products</p>
+                  <p className="text-xs text-gray-600 mb-2">
+                    {brand.products} products
+                  </p>
                   <div className="flex items-center justify-center gap-1">
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                     <span className="text-sm">{brand.rating}</span>
@@ -231,7 +198,8 @@ export function BrandsPage() {
               </div>
               <h3 className="font-semibold mb-2">100% Authentic</h3>
               <p className="text-sm text-gray-600">
-                All products are guaranteed authentic and come with official warranties
+                All products are guaranteed authentic and come with official
+                warranties
               </p>
             </div>
             <div className="text-center">
@@ -265,7 +233,7 @@ export function BrandsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {products.slice(0, 4).map((product) => (
+            {(products || []).slice(0, 4).map((product) => (
               <Link key={product.id} to={`/product/${product.id}`}>
                 <Card className="group overflow-hidden border border-blue-100 hover:border-blue-300 shadow-sm hover:shadow-xl transition-all duration-300">
                   <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
@@ -276,7 +244,9 @@ export function BrandsPage() {
                     />
                   </div>
                   <div className="p-4">
-                    <p className="text-xs text-blue-600 mb-1 font-semibold">{product.category}</p>
+                    <p className="text-xs text-blue-600 mb-1 font-semibold">
+                      {product.category}
+                    </p>
                     <h3 className="font-semibold mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                       {product.name}
                     </h3>
@@ -284,7 +254,9 @@ export function BrandsPage() {
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                       <span className="text-sm">{product.rating}</span>
                     </div>
-                    <p className="text-lg font-semibold text-blue-600">${product.price}</p>
+                    <p className="text-lg font-semibold text-blue-600">
+                      ${product.price}
+                    </p>
                   </div>
                 </Card>
               </Link>
