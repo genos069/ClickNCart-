@@ -3,12 +3,45 @@ import Cart from "../models/Cart.js";
 // GET CART
 export const getCart = async (req, res) => {
   const cart = await Cart.findOne({ user: req.user._id });
-  res.json(cart || { items: [] });
+
+  if (!cart) {
+    return res.json({
+      items: [],
+      subtotal: 0,
+      shipping: 0,
+      tax: 0,
+      discount: 0,
+      discountAmount: 0,
+      total: 0,
+    });
+  }
+
+  const subtotal = cart.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const shipping = subtotal > 100 ? 0 : 15;
+  const tax = subtotal * 0.08;
+
+  const discountAmount = (subtotal * cart.discount) / 100;
+
+  const total = subtotal + shipping + tax - discountAmount;
+
+  res.json({
+    items: cart.items,
+    subtotal,
+    shipping,
+    tax,
+    discount: cart.discount,
+    discountAmount,
+    total,
+  });
 };
 
 // ADD TO CART
 export const addToCart = async (req, res) => {
-  const { productId , name , price , image} = req.body;
+  const { productId, name, price, image } = req.body;
 
   let cart = await Cart.findOne({ user: req.user._id });
 
@@ -24,17 +57,23 @@ export const addToCart = async (req, res) => {
   if (exist) {
     exist.quantity += 1;
   } else {
-    cart.items.push({ 
+    cart.items.push({
       productId,
       name,
       price,
       quantity: 1,
-      image
-     });
+      image,
+    });
   }
 
   await cart.save();
-  res.json(cart);
+
+  const totals = calculateCartTotals(cart);
+
+  res.json({
+    items: cart.items,
+    ...totals,
+  });
 };
 
 // REMOVE ITEM
@@ -47,7 +86,12 @@ export const removeFromCart = async (req, res) => {
 
   await cart.save();
 
-  res.json(cart);
+  const totals = calculateCartTotals(cart);
+
+  res.json({
+    items: cart.items,
+    ...totals,
+  });
 };
 
 // CLEAR CART
@@ -73,11 +117,10 @@ export const applyPromoCode = async (req, res) => {
     return res.status(404).json({ message: "Cart not found" });
   }
 
-  // promo logic
   let discount = 0;
 
   if (code === "SAVE10") {
-    discount = 10; // flat discount
+    discount = 10; // 10%
   } else if (code === "SAVE20") {
     discount = 20;
   } else {
@@ -89,5 +132,84 @@ export const applyPromoCode = async (req, res) => {
 
   await cart.save();
 
-  res.json(cart);
+  const totals = calculateCartTotals(cart);
+
+  res.json({
+    items: cart.items,
+    promoCode: cart.promoCode,
+    ...totals,
+  });
+};
+
+
+//Calculate Cart Total
+const calculateCartTotals = (cart) => {
+  const subtotal = cart.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const shipping = subtotal > 100 ? 0 : 15;
+  const tax = subtotal * 0.08;
+
+  const discountAmount = (subtotal * cart.discount) / 100;
+
+  const total = subtotal + shipping + tax - discountAmount;
+
+  return {
+    subtotal,
+    shipping,
+    tax,
+    discount: cart.discount,
+    discountAmount,
+    total,
+  };
+};
+
+
+// UPDATE CART ITEM QUANTITY
+export const updateCartItem = async (req, res) => {
+  const { productId, quantity } = req.body;
+
+  const cart = await Cart.findOne({ user: req.user._id });
+
+  if (!cart) {
+    return res.status(404).json({ message: "Cart not found" });
+  }
+
+  const item = cart.items.find((i) => i.productId === productId);
+
+  if (!item) {
+    return res.status(404).json({ message: "Item not found" });
+  }
+
+  if (quantity <= 0) {
+    // remove item
+    cart.items = cart.items.filter((i) => i.productId !== productId);
+  } else {
+    item.quantity = quantity;
+  }
+
+  await cart.save();
+
+  // ✅ Recalculate totals here (IMPORTANT)
+  const subtotal = cart.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const shipping = subtotal > 100 ? 0 : 15;
+  const tax = subtotal * 0.08;
+  const discountAmount = (subtotal * cart.discount) / 100;
+  const total = subtotal + shipping + tax - discountAmount;
+
+  res.json({
+    items: cart.items,
+    subtotal,
+    shipping,
+    tax,
+    discount: cart.discount,
+    discountAmount,
+    total,
+  });
 };
