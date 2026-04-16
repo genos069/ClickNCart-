@@ -11,11 +11,6 @@ import cartRoutes from "./routes/cartRoutes.js";
 dotenv.config({quiet: true});
 const app = express();
 
-app.use((req, res, next) => {
-  console.log("🌍 GLOBAL HIT:", req.method, req.url);
-  next();
-});
-
 // Connect DB
 connectDB();
 
@@ -33,7 +28,7 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

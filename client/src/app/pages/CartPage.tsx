@@ -140,9 +140,9 @@ export function CartPage() {
           {/* Cart Items - Design 11: Detailed cart layout */}
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item) => (
-              <Card key={item.id} className="p-6 border border-blue-100">
+              <Card key={item.productId} className="p-6 border border-blue-100">
                 <div className="flex gap-6">
-                  <Link to={`/product/${item.id}`} className="flex-shrink-0">
+                  <Link to={`/product/${item.productId}`} className="flex-shrink-0">
                     <img
                       src={item.image}
                       alt={item.name}
@@ -151,7 +151,7 @@ export function CartPage() {
                   </Link>
                   <div className="flex-1">
                     <div className="flex justify-between mb-2">
-                      <Link to={`/product/${item.id}`}>
+                      <Link to={`/product/${item.productId}`}>
                         <h3 className="font-semibold text-lg hover:text-blue-600 transition-colors">
                           {item.name}
                         </h3>

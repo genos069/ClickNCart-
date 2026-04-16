@@ -251,9 +251,9 @@ export function ShopPage() {
                         alt={product.name}
                         className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                       />
-                      {product.discount && (
+                      {product.discount>0 && (
                         <Badge className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-pink-500 border-0">
-                          -{product.discount}%
+                          -{product.discount.toFixed(0)}%
                         </Badge>
                       )}
                       {!product.inStock && (
