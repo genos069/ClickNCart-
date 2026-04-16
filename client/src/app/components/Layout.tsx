@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 
 export function Layout() {
   const location = useLocation();
-  const [cartCount] = useState(3);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 

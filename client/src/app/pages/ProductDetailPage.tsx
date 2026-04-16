@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { addToCart } from "../../services/cartServices";
 import {
   Tabs,
   TabsContent,
@@ -36,6 +37,22 @@ export function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
 
   const [relatedProducts, setRelatedProducts] = useState([]);
+
+  const handleAddToCart = async () => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      await addToCart({
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+      },userInfo.token);
+      alert("Added to cart ✅");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add ❌");
+    }
+  };
 
   useEffect(() => {
     const fetchRelated = async () => {
@@ -135,9 +152,8 @@ export function ProductDetailPage() {
                 <button
                   key={i}
                   onClick={() => setSelectedImage(i)}
-                  className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 border-2 transition-colors ${
-                    selectedImage === i ? "border-blue-600" : "border-blue-100"
-                  }`}
+                  className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 border-2 transition-colors ${selectedImage === i ? "border-blue-600" : "border-blue-100"
+                    }`}
                 >
                   <img
                     src={product.image}
@@ -162,11 +178,10 @@ export function ProductDetailPage() {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-5 h-5 ${
-                      i < Math.floor(product.rating)
+                    className={`w-5 h-5 ${i < Math.floor(product.rating)
                         ? "fill-yellow-400 text-yellow-400"
                         : "text-gray-300"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -246,6 +261,7 @@ export function ProductDetailPage() {
                 </button>
               </div>
               <Button
+                onClick={handleAddToCart}
                 size="lg"
                 className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 disabled={!product.inStock}
@@ -494,11 +510,10 @@ export function ProductDetailPage() {
                                   {[...Array(5)].map((_, j) => (
                                     <Star
                                       key={j}
-                                      className={`w-4 h-4 ${
-                                        j < 4
+                                      className={`w-4 h-4 ${j < 4
                                           ? "fill-amber-400 text-amber-400"
                                           : "text-gray-300"
-                                      }`}
+                                        }`}
                                     />
                                   ))}
                                 </div>

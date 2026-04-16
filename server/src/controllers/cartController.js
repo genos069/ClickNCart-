@@ -3,13 +3,12 @@ import Cart from "../models/Cart.js";
 // GET CART
 export const getCart = async (req, res) => {
   const cart = await Cart.findOne({ user: req.user._id });
-
   res.json(cart || { items: [] });
 };
 
 // ADD TO CART
 export const addToCart = async (req, res) => {
-  const { productId, name, price } = req.body;
+  const { productId , name , price , image} = req.body;
 
   let cart = await Cart.findOne({ user: req.user._id });
 
@@ -25,7 +24,13 @@ export const addToCart = async (req, res) => {
   if (exist) {
     exist.quantity += 1;
   } else {
-    cart.items.push({ productId, name, price, quantity: 1 });
+    cart.items.push({ 
+      productId,
+      name,
+      price,
+      quantity: 1,
+      image
+     });
   }
 
   await cart.save();
