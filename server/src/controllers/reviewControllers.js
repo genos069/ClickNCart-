@@ -1,28 +1,53 @@
 import Review from "../models/Review.js";
 import { updateProductRating } from "./productController.js";
+import User from "../models/User.js";
+
 
 export const createReview = async (req, res) => {
   try {
-    const { rating, title, review, product } = req.body;
+    const { rating, title, comment } = req.body;
+    const { productId } = req.params;
+    
+    const userId = req.user.id;
+    
+    if (!rating || !comment || !productId || !title) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
 
-    const newReview = await Review.create({
+    // prevent duplicate review by SAME USER
+    const alreadyReviewed = await Review.findOne({
+      product: productId,
+      user: userId,
+    });
+    
+    if (alreadyReviewed) {
+      return res.status(400).json({
+        message: "You have already reviewed this product",
+      });
+    }
+
+    const review = await Review.create({
+      product: productId,
+      user: userId,
       rating,
       title,
-      review,
-      product,
-      user: req.user.id,
+      comment,
     });
-
-    await updateProductRating(product);
-
+    
+    await updateProductRating(productId);
+    
     res.status(201).json({
       success: true,
-      data: newReview,
+      message: "Review submitted successfully",
+      review,
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
+    console.error("Review Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
     });
   }
 };
@@ -40,70 +65,6 @@ export const getProductReviews = async (req, res) => {
       success: true,
       count: reviews.length,
       data: reviews,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-export const updateReview = async (req, res) => {
-  try {
-    const { reviewId } = req.params;
-
-    const review = await Review.findById(reviewId);
-
-    if (!review) {
-      return res.status(404).json({ message: "Review not found" });
-    }
-
-    // check ownership
-    if (review.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
-    const updated = await mongoose
-      .model("Review")
-      .findByIdAndUpdate(reviewId, req.body, { new: true });
-
-    await updateProductRating(review.product);
-
-    res.json({
-      success: true,
-      data: updated,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-export const deleteReview = async (req, res) => {
-  try {
-    const { reviewId } = req.params;
-
-    const review = await Review.findById(reviewId);
-
-    if (!review) {
-      return res.status(404).json({ message: "Review not found" });
-    }
-
-    // check ownership
-    if (review.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
-    await review.deleteOne();
-
-    await updateProductRating(review.product);
-
-    res.json({
-      success: true,
-      message: "Review deleted",
     });
   } catch (error) {
     res.status(500).json({
