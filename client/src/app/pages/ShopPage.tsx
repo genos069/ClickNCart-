@@ -10,7 +10,6 @@ import { Slider } from "../components/ui/slider";
 
 import { Star, Grid3x3, List, SlidersHorizontal } from "lucide-react";
 
-import { products } from "../data/products";
 import { searchProducts } from "../../services/productServices";
 
 export function ShopPage() {
@@ -26,6 +25,16 @@ export function ShopPage() {
 
   const location = useLocation();
 
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
+  const [inStockOnly, setInStockOnly] = useState(false);
+
+  const clearFilters = () => {
+    setSelectedCategories([]);
+    setPriceRange([0, 3000]);
+    setSortBy("featured");
+    setSelectedRating(null);
+    setInStockOnly(false);
+  };
   // =========================
   // FETCH FROM BACKEND (Code 2 logic)
   // =========================
@@ -34,12 +43,13 @@ export function ShopPage() {
       const params = new URLSearchParams(location.search);
       const search = params.get("search");
 
-      if (!search) return;
-
       try {
         setLoading(true);
 
-        const data = await searchProducts({ search });
+        const data = await searchProducts({
+          search: search || "",
+          limit: 80, // optional safety (frontend override)
+        });
 
         setApiProducts(
           data.data.map((p: any) => ({
@@ -56,16 +66,15 @@ export function ShopPage() {
 
     fetchData();
   }, [location.search]);
-
   // =========================
   // FALLBACK DATA
   // =========================
-  const baseProducts = apiProducts.length > 0 ? apiProducts : products;
+  const baseProducts = apiProducts;
 
   // =========================
   // FILTERS (Code 2 logic + Code 1 richness)
   // =========================
-  const categories = Array.from(new Set(products.map((p) => p.category)));
+  const categories = Array.from(new Set(apiProducts.map((p) => p.category)));
 
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
@@ -75,7 +84,7 @@ export function ShopPage() {
     );
   };
 
-  const filteredProducts = baseProducts.filter((product) => {
+  const filteredProducts = apiProducts.filter((product) => {
     const matchesCategory =
       selectedCategories.length === 0 ||
       selectedCategories.includes(product.category);
@@ -83,17 +92,43 @@ export function ShopPage() {
     const matchesPrice =
       product.price >= priceRange[0] && product.price <= priceRange[1];
 
-    return matchesCategory && matchesPrice;
+    const matchesRating = selectedRating
+      ? product.rating >= selectedRating
+      : true;
+
+    const matchesStock = inStockOnly ? product.inStock : true;
+
+    return matchesCategory && matchesPrice && matchesRating && matchesStock;
+  });
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case "price-low":
+        return a.price - b.price;
+
+      case "price-high":
+        return b.price - a.price;
+
+      case "rating":
+        return b.rating - a.rating;
+
+      case "newest":
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+      case "featured":
+      default:
+        return 0; // no sorting
+    }
   });
 
   // =========================
   // LOADING UI
   // =========================
-  if (loading) {
+  if (!loading && apiProducts.length === 0) {
     return (
-      <p className="text-center py-10 text-lg font-medium">
-        Loading products...
-      </p>
+      <p className="text-center py-10 text-gray-500">No products found.</p>
     );
   }
 
@@ -162,7 +197,15 @@ export function ShopPage() {
                     key={rating}
                     className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
                   >
-                    <Checkbox id={`rating-${rating}`} />
+                    <Checkbox
+                      id={`rating-${rating}`}
+                      checked={selectedRating === rating}
+                      onCheckedChange={() =>
+                        setSelectedRating(
+                          selectedRating === rating ? null : rating,
+                        )
+                      }
+                    />
                     <Label
                       htmlFor={`rating-${rating}`}
                       className="flex items-center gap-1 cursor-pointer"
@@ -179,7 +222,11 @@ export function ShopPage() {
             <div className="mb-6">
               <h3 className="font-semibold mb-3">Availability</h3>
               <div className="flex items-center gap-2">
-                <Checkbox id="in-stock" />
+                <Checkbox
+                  id="in-stock"
+                  checked={inStockOnly}
+                  onCheckedChange={() => setInStockOnly(!inStockOnly)}
+                />
                 <Label htmlFor="in-stock" className="text-sm cursor-pointer">
                   In Stock Only
                 </Label>
@@ -187,6 +234,7 @@ export function ShopPage() {
             </div>
 
             <Button
+              onClick={clearFilters}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               variant="outline"
             >
@@ -242,7 +290,7 @@ export function ShopPage() {
           {/* Products - Grid View */}
           {viewMode === "grid" && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
+              {sortedProducts.map((product) => (
                 <Link key={product.id} to={`/product/${product.id}`}>
                   <Card className="group overflow-hidden border border-blue-100 hover:border-blue-300 shadow-sm hover:shadow-lg transition-all duration-300">
                     <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
@@ -251,7 +299,7 @@ export function ShopPage() {
                         alt={product.name}
                         className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                       />
-                      {product.discount>0 && (
+                      {product.discount > 0 && (
                         <Badge className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-pink-500 border-0">
                           -{product.discount.toFixed(0)}%
                         </Badge>
@@ -296,7 +344,7 @@ export function ShopPage() {
           {/* Products - List View */}
           {viewMode === "list" && (
             <div className="space-y-4">
-              {filteredProducts.map((product) => (
+              {sortedProducts.map((product) => (
                 <Link key={product.id} to={`/product/${product.id}`}>
                   <Card className="group overflow-hidden border border-blue-100 hover:border-blue-300 shadow-sm hover:shadow-lg transition-all duration-300">
                     <div className="flex flex-col sm:flex-row gap-4 p-4">

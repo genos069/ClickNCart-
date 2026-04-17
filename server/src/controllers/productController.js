@@ -89,14 +89,14 @@ export const getProducts = async (req, res) => {
       minRating,
       inStock,
       page = 1,
-      limit = 10,
+      limit = 80,
+      sortBy = "featured",
     } = req.query;
 
-    // Build dynamic query
     let query = {};
 
-    // 🔎 Keyword search (Amazon-style)
-    if (search) {
+    // 🔎 SEARCH
+    if (search && search.trim() !== "") {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
@@ -104,45 +104,74 @@ export const getProducts = async (req, res) => {
       ];
     }
 
-    // 🏷️ Category filter
+    // 🏷️ CATEGORY (supports single OR array)
     if (category) {
-      query.category = category;
+      query.category = Array.isArray(category)
+        ? { $in: category }
+        : category;
     }
 
-    // 💰 Price filter
+    // 💰 PRICE
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // ⭐ Rating filter
+    // ⭐ RATING
     if (minRating) {
       query.rating = { $gte: Number(minRating) };
     }
 
-    // 📦 Stock filter
+    // 📦 STOCK
     if (inStock !== undefined) {
       query.inStock = inStock === "true";
     }
 
-    // 📄 Pagination
-    const skip = (page - 1) * limit;
+    // 📄 PAGINATION (fixed types)
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
 
-    // Fetch products
+    // 📊 SORTING (🔥 THIS FIXES "FEATURED")
+    let sort = { createdAt: -1 };
+
+    switch (sortBy) {
+      case "price-low":
+        sort = { price: 1 };
+        break;
+
+      case "price-high":
+        sort = { price: -1 };
+        break;
+
+      case "rating":
+        sort = { rating: -1 };
+        break;
+
+      case "newest":
+        sort = { createdAt: -1 };
+        break;
+
+      case "featured":
+      default:
+        sort = { createdAt: -1 }; // or add featured field later
+        break;
+    }
+
+    // 🚀 QUERY
     const products = await Product.find(query)
       .skip(skip)
-      .limit(Number(limit))
-      .sort({ createdAt: -1 });
+      .limit(limitNum)
+      .sort(sort);
 
-    // Total count (for frontend pagination)
     const total = await Product.countDocuments(query);
 
     return res.status(200).json({
       success: true,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / limit),
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
       data: products,
     });
   } catch (error) {
@@ -414,8 +443,6 @@ export const getRelatedProducts = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-// future change
 
 export const getProductsForFrontend = async (req, res) => {
   try {

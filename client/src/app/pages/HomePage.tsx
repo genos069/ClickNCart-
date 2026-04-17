@@ -57,8 +57,8 @@ export function HomePage() {
     fetchProducts();
   }, []);
 
-  const featuredProducts = Array.isArray(home) ? home.slice(9, 19) : [];
-  const trendingProducts = Array.isArray(home) ? home.slice(21, 25) : [];
+  const featuredProducts = Array.isArray(home) ? home.slice(9, 41) : [];
+  const trendingProducts = Array.isArray(home) ? home.slice(47,51) : [];
 
   if (loading) {
     return <div className="text-center py-20">Loading...</div>;
@@ -94,13 +94,15 @@ export function HomePage() {
                         Shop Now <ArrowRight className="ml-2 w-5 h-5" />
                       </Button>
                     </Link>
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="text-white border-white hover:bg-white hover:text-blue-900 bg-transparent"
-                    >
-                      Explore Collection
-                    </Button>
+                    <Link to="/sale">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="text-white border-white hover:bg-white hover:text-blue-900 bg-transparent"
+                      >
+                        Explore Collection
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
