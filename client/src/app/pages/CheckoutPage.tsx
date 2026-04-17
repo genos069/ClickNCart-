@@ -7,14 +7,16 @@ import { Label } from "../components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Checkbox } from "../components/ui/checkbox";
 import { Lock, CreditCard, Truck, Package, CheckCircle2 } from "lucide-react";
-import { getCart } from "../../services/cartServices";
+import { getCart, saveAddress } from "../../services/cartServices";
+import { savePaymentMethod } from "../../services/paymentServices";
 import { updateShippingMethod } from "../../services/cartServices";
+import { placeOrder } from "../../services/orderServices";
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<"shipping" | "payment" | "review">("shipping");
   const [shippingMethod, setShippingMethod] = useState("standard");
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [cartData, setCartData] = useState({
     items: [],
     subtotal: 0,
@@ -23,6 +25,16 @@ export function CheckoutPage() {
     discount: 0,
     discountAmount: 0,
     total: 0,
+  });
+  const [address, setAddress] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -93,41 +105,78 @@ export function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" placeholder="John" />
+                      <Input id="firstName" placeholder="your first name"
+                        value={address.firstName}
+                        onChange={(e) =>
+                          setAddress({ ...address, firstName: e.target.value })
+                        }
+                      />
                     </div>
                     <div>
                       <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" placeholder="Doe" />
+                      <Input id="lastName" placeholder="your last name"
+                        value={address.lastName}
+                        onChange={(e) =>
+                          setAddress({ ...address, lastName: e.target.value })
+                        }
+                      />
                     </div>
                   </div>
 
                   <div>
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="john@example.com" />
+                    <Input id="email" type="email" placeholder="email@gmail.com"
+                      value={address.email}
+                      onChange={(e) =>
+                        setAddress({ ...address, email: e.target.value })
+                      } />
                   </div>
 
                   <div>
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" type="tel" placeholder="+1 (555) 123-4567" />
+                    <Input id="phone" type="tel" placeholder="+91 **********"
+                      value={address.phone}
+                      onChange={(e) =>
+                        setAddress({ ...address, phone: e.target.value })
+                      } />
                   </div>
 
                   <div>
                     <Label htmlFor="address">Street Address</Label>
-                    <Input id="address" placeholder="123 Main Street" />
+                    <Input id="address" placeholder="your address"
+                      value={address.address}
+                      onChange={(e) =>
+                        setAddress({ ...address, address: e.target.value })
+                      } />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="city">City</Label>
-                      <Input id="city" placeholder="New York" />
+                      <Input id="city" placeholder="your city"
+                        value={address.city}
+                        onChange={(e) =>
+                          setAddress({ ...address, city: e.target.value })
+                        }
+                      />
                     </div>
                     <div>
                       <Label htmlFor="state">State</Label>
-                      <Input id="state" placeholder="NY" />
+                      <Input id="state" placeholder="your state"
+                        value={address.state}
+                        onChange={(e) =>
+                          setAddress({ ...address, state: e.target.value })
+                        }
+                      />
                     </div>
                     <div>
                       <Label htmlFor="zip">ZIP Code</Label>
-                      <Input id="zip" placeholder="10001" />
+                      <Input id="zip" placeholder="your ZIP code"
+                        value={address.zip}
+                        onChange={(e) =>
+                          setAddress({ ...address, zip: e.target.value })
+                        }
+                      />
                     </div>
                   </div>
 
@@ -174,7 +223,19 @@ export function CheckoutPage() {
                     </RadioGroup>
                   </div>
 
-                  <Button type="button" size="lg" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" onClick={() => setStep("payment")}>
+                  <Button type="button" size="lg" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" onClick={async () => {
+                    try {
+                      if (!address.firstName || !address.address || !address.city) {
+                        alert("Please fill all required fields");
+                        return;
+                      }
+                      await saveAddress(address, user.token);
+                      setStep("payment");
+                    } catch (err: any) {
+                      console.log(err);
+                      alert(err.response?.data?.message || "Failed to save address. Please try again.");
+                    }
+                  }}>
                     Continue to Payment
                   </Button>
                 </form>
@@ -191,15 +252,34 @@ export function CheckoutPage() {
 
                 <div className="mb-6">
                   <Label className="mb-3 block">Payment Method</Label>
-                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <Card className="p-4 mb-3 cursor-pointer hover:border-blue-600 transition-colors border border-blue-100">
+                  <RadioGroup
+                    value={paymentMethod}
+                    onValueChange={async (value) => {
+                      setPaymentMethod(value);
+
+                      try {
+                        await savePaymentMethod(value, user.token);
+                      } catch (err:any) {
+                        console.log(err);
+                        alert(err.response?.data?.message || "Failed to save payment method");
+                      }
+                    }}
+                  >
+                    <Card className="p-4 mb-3 cursor-pointer border border-blue-100">
                       <div className="flex items-center gap-3">
-                        <RadioGroupItem value="card" id="card" />
-                        <Label htmlFor="card" className="flex-1 cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <CreditCard className="w-5 h-5" />
-                            <span className="font-semibold">Credit / Debit Card</span>
-                          </div>
+                        <RadioGroupItem value="cod" id="cod" />
+                        <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                          Cash on Delivery
+                        </Label>
+                      </div>
+                    </Card>
+
+                    {/* ONLINE */}
+                    <Card className="p-4 cursor-pointer border border-blue-100">
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value="online" id="online" />
+                        <Label htmlFor="online" className="flex-1 cursor-pointer">
+                          UPI / Card / Net Banking
                         </Label>
                       </div>
                     </Card>
@@ -228,18 +308,20 @@ export function CheckoutPage() {
                     <Input id="cardName" placeholder="John Doe" />
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Checkbox id="billing" />
-                    <Label htmlFor="billing" className="text-sm cursor-pointer">
-                      Billing address same as shipping
-                    </Label>
-                  </div>
 
                   <div className="flex gap-3">
                     <Button type="button" variant="outline" size="lg" className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50" onClick={() => setStep("shipping")}>
                       Back
                     </Button>
-                    <Button type="button" size="lg" className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" onClick={() => setStep("review")}>
+                    <Button type="button" size="lg" className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      onClick={async () => {
+                        try {
+                          await savePaymentMethod(paymentMethod, user.token);
+                          setStep("review");
+                        } catch (err) {
+                          console.log(err);
+                        }
+                      }}>
                       Review Order
                     </Button>
                   </div>
@@ -260,21 +342,27 @@ export function CheckoutPage() {
                     <div>
                       <h3 className="font-semibold mb-2">Shipping Address</h3>
                       <p className="text-gray-600">
-                        John Doe<br />
-                        123 Main Street<br />
-                        New York, NY 10001<br />
-                        john@example.com
+                        {address.firstName} {address.lastName}<br />
+                        {address.address}<br />
+                        {address.city}, {address.state} {address.zip}<br />
+                        {address.email}
                       </p>
                     </div>
 
                     <div className="pt-4 border-t">
                       <h3 className="font-semibold mb-2">Payment Method</h3>
-                      <p className="text-gray-600">Credit Card ending in 3456</p>
+                      <p className="text-gray-600 capitalize">
+                        {paymentMethod}
+                      </p>
                     </div>
 
                     <div className="pt-4 border-t">
                       <h3 className="font-semibold mb-2">Shipping Method</h3>
-                      <p className="text-gray-600">Standard Shipping (5-7 business days) - FREE</p>
+                      <p className="text-gray-600">
+                        {shippingMethod === "standard"
+                          ? "Standard Shipping (5-7 days) - FREE"
+                          : "Express Shipping (2-3 days) - $15"}
+                      </p>
                     </div>
                   </div>
                 </Card>
@@ -299,7 +387,15 @@ export function CheckoutPage() {
                     type="button"
                     size="lg"
                     className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    onClick={() => navigate("/order-confirmation")}
+                    onClick={async () => {
+                      try {
+                        await placeOrder(user.token);
+                        navigate("/order-confirmation");
+                      } catch (err) {
+                        console.log(err);
+                        alert("Order failed");
+                      }
+                    }}
                   >
                     <Lock className="mr-2 w-5 h-5" />
                     Place Order

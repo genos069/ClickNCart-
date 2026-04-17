@@ -7,6 +7,9 @@ import productRoutes from "./routes/productRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import brandRoute from "./routes/brandRoute.js";
 import cartRoutes from "./routes/cartRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+
 
 dotenv.config({quiet: true});
 const app = express();
@@ -22,6 +25,8 @@ app.use("/api/product", productRoutes)
 app.use("/api/review", reviewRoutes)
 app.use("/api/brand", brandRoute)
 app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/payment", paymentRoutes);
 
 // Test route
 app.get("/", (req, res) => {

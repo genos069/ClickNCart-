@@ -29,15 +29,17 @@ export const applyPromo = (code, token) =>
     }
   );
 
-export const updateCart = (productId, quantity, token) => API.patch(
-  "/cart/update",
-  { productId, quantity },
-  {
-    headers: { Authorization: `Bearer ${token}` },
-  }
-);
+export const updateCart = (productId, quantity, token) =>
+  API.patch(
+    "/cart/update",
+    { productId, quantity },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
 
-export const updateShippingMethod = (method, token) => API.put(
+export const updateShippingMethod = (method, token) =>
+  API.put(
     "/api/cart/shipping",
     { method },
     {
@@ -45,3 +47,12 @@ export const updateShippingMethod = (method, token) => API.put(
     }
   );
 ;
+
+export const saveAddress = (address, token) =>
+  API.put("/cart/address", address, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+;
+

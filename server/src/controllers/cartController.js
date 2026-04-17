@@ -258,3 +258,23 @@ export const updateShipping = async (req, res) => {
     shippingMethod: cart.shippingMethod,
   });
 };
+
+// SHIPPING ADDRESS
+export const saveShippingAddress = async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user._id });
+
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    cart.shippingAddress = req.body;
+
+    await cart.save();
+
+    res.json(cart);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+

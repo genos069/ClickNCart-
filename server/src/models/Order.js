@@ -1,32 +1,23 @@
 import mongoose from "mongoose";
 
-const cartSchema = new mongoose.Schema(
+const orderSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    items: [
+
+    orderItems: [
       {
         productId: String,
         name: String,
+        image: String,
         price: Number,
         quantity: Number,
-        image: String,
       },
     ],
-    discount: {
-      type: Number,
-      default: 0,
-    },
-    promoCode: {
-      type: String,
-    },
-    shippingMethod: {
-      type: String,
-      default: "standard",
-    },
+
     shippingAddress: {
       firstName: String,
       lastName: String,
@@ -37,11 +28,35 @@ const cartSchema = new mongoose.Schema(
       state: String,
       zip: String,
     },
+
     paymentMethod: {
       type: String,
+      required: true,
+    },
+
+    shippingMethod: {
+      type: String,
+      required: true,
+    },
+
+    subtotal: Number,
+    shipping: Number,
+    tax: Number,
+    discount: Number,
+    discountAmount: Number,
+    total: Number,
+
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+
+    isDelivered: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Cart", cartSchema);
+export default mongoose.model("Order", orderSchema);
