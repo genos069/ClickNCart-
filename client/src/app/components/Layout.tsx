@@ -11,6 +11,11 @@ export function Layout() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
+  const handleNotImplemented = (e) => {
+    e.preventDefault();
+    alert("Arriving Soon...");
+  };
+
   const handleSearch = async () => {
     if (!search.trim()) return;
 
@@ -20,7 +25,7 @@ export function Layout() {
       console.error("Search failed:", error);
     }
   };
-  
+
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
@@ -184,24 +189,36 @@ export function Layout() {
               <h3 className="font-semibold mb-4 text-white">Shop</h3>
               <ul className="space-y-2 text-sm text-blue-200">
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <Link
+                    className="hover:text-white transition-colors"
+                    to={`sale`}
+                  >
                     New Arrivals
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <Link
+                    className="hover:text-white transition-colors"
+                    to={`brands`}
+                  >
                     Best Sellers
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <Link
+                    className="hover:text-white transition-colors"
+                    to={`sale`}
+                  >
                     Sale
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <Link
+                    className="hover:text-white transition-colors"
+                    to={`shop`}
+                  >
                     Categories
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -209,22 +226,22 @@ export function Layout() {
               <h3 className="font-semibold mb-4 text-white">Help</h3>
               <ul className="space-y-2 text-sm text-blue-200">
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
                     Customer Support
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
                     Shipping Info
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
                     Returns
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
                     FAQ
                   </a>
                 </li>
