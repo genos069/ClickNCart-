@@ -15,10 +15,9 @@ const reviewSchema = new mongoose.Schema(
       trim: true,
     },
 
-    review: {
+    comment: {
       type: String,
       required: true,
-      trim: true,
     },
 
     user: {
