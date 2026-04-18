@@ -3,8 +3,6 @@ import Product from "../models/Product.js";
 import Brand from "../models/Brand.js";
 
 export const createProduct = async (req, res) => {
-  console.log("🔥 CONTROLLER HIT");
-  console.log("BODY:", req.body);
   try {
     const {
       name,
@@ -84,6 +82,7 @@ export const getProducts = async (req, res) => {
     const {
       search,
       category,
+      brand,
       minPrice,
       maxPrice,
       minRating,
@@ -106,9 +105,11 @@ export const getProducts = async (req, res) => {
 
     // 🏷️ CATEGORY (supports single OR array)
     if (category) {
-      query.category = Array.isArray(category)
-        ? { $in: category }
-        : category;
+      query.category = Array.isArray(category) ? { $in: category } : category;
+    }
+
+    if (brand) {
+      query.brand = Array.isArray(brand) ? { $in: brand } : brand;
     }
 
     // 💰 PRICE
@@ -342,6 +343,7 @@ export const seedProduct = async (req, res) => {
           inStock: p.inStock ?? true,
           brand: brandId, // ✅ always ObjectId
           discount,
+          rating: p.rating || 0,
         };
       });
 
@@ -398,8 +400,6 @@ export const getProductById = async (req, res) => {
     }
 
     const product = await Product.findById(id);
-
-    console.log(product);
 
     if (!product) {
       return res.status(404).json({

@@ -25,6 +25,5 @@ export const getRelatedProducts = async (id) => {
 
 export const fetchProducts = async () => {
   const res = await API.get("/product/all")
-  // console.log(res.data)
   return res.data
 };
