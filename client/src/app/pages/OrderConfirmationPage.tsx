@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -6,16 +6,24 @@ import { CheckCircle, Package, Truck, MapPin, Calendar, CreditCard, Download, Ma
 
 export function OrderConfirmationPage() {
   const orderNumber = "ORD-" + Math.random().toString(36).substr(2, 9).toUpperCase();
-  const orderDate = new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const orderDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
-  const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
+  const { state } = useLocation();
+  const orderData = state?.order;
+  const order = orderData.order;
+
+  if (!order) {
+    return <p className="flex items-center justify-center p-6 m-6">No order found</p>;
+  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12">
@@ -38,7 +46,7 @@ export function OrderConfirmationPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <p className="text-sm text-gray-600 mb-1">Order Number</p>
-              <p className="text-2xl font-bold text-green-700">{orderNumber}</p>
+              <p className="text-2xl font-bold text-green-700">{order._id}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600 mb-1">Order Date</p>
@@ -118,21 +126,17 @@ export function OrderConfirmationPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-100">
               <h3 className="font-semibold mb-3 text-blue-900">Delivery Address</h3>
-              <p className="text-gray-700">John Doe</p>
-              <p className="text-gray-600 text-sm">123 Main Street</p>
-              <p className="text-gray-600 text-sm">Apartment 4B</p>
-              <p className="text-gray-600 text-sm">New York, NY 10001</p>
-              <p className="text-gray-600 text-sm">United States</p>
-              <p className="text-gray-600 text-sm mt-2">Phone: (555) 123-4567</p>
+              <p className="text-gray-700">{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+              <p className="text-gray-600 text-sm">{order.shippingAddress.address}</p>
+              <p className="text-gray-600 text-sm">{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zip}</p>
+              <p className="text-gray-600 text-sm mt-2">{order.shippingAddress?.phone}</p>
             </div>
 
             <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-100">
               <h3 className="font-semibold mb-3 text-purple-900">Billing Address</h3>
-              <p className="text-gray-700">John Doe</p>
-              <p className="text-gray-600 text-sm">123 Main Street</p>
-              <p className="text-gray-600 text-sm">Apartment 4B</p>
-              <p className="text-gray-600 text-sm">New York, NY 10001</p>
-              <p className="text-gray-600 text-sm">United States</p>
+              <p className="text-gray-700">{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+              <p className="text-gray-600 text-sm">{order.shippingAddress.address}</p>
+              <p className="text-gray-600 text-sm">{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zip}</p>
               <Badge className="mt-2 bg-green-100 text-green-700 border-0">Same as shipping</Badge>
             </div>
           </div>
@@ -143,11 +147,17 @@ export function OrderConfirmationPage() {
               <h3 className="font-semibold text-orange-900">Shipping Method</h3>
             </div>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold">Standard Shipping</p>
-                <p className="text-sm text-gray-600">Estimated delivery: 5-7 business days</p>
-              </div>
-              <Badge className="bg-green-100 text-green-700 border-0 text-base px-3 py-1">FREE</Badge>
+              {order.shippingMethod === "standard" ?
+                (<div>
+                  <p className="font-semibold">Standard Shipping</p>
+                  <p className="text-sm text-gray-600">Estimated delivery: 5-7 business days</p>
+                </div> ):
+                (<div>
+                  <p className="font-semibold">Express Shipping</p>
+                  <p className="text-sm text-gray-600">Estimated delivery: 3-4 business days</p>
+                </div>)
+              }
+              <Badge className="bg-green-100 text-green-700 border-0 text-base px-3 py-1">{order.shippingMethod === "standard" ? "FREE" : "$15"}</Badge>
             </div>
           </div>
         </Card>
@@ -156,13 +166,13 @@ export function OrderConfirmationPage() {
         <Card className="p-6 mb-6 border border-blue-100">
           <h2 className="text-xl font-semibold mb-4">Order Items</h2>
           <div className="space-y-4">
-            {[1, 2].map((_, i) => (
-              <div key={i} className="flex gap-4 pb-4 border-b last:border-b-0 last:pb-0">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex-shrink-0 border border-blue-100"></div>
+            {order.orderItems.map((item: any) => (
+              <div key={item.productId} className="flex gap-4 pb-4 border-b last:border-b-0 last:pb-0">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex-shrink-0 border border-blue-100"><img src={item.image} alt={item.name} className="w-full h-full object-cover" /></div>
                 <div className="flex-1">
-                  <h3 className="font-semibold mb-1">Product Name {i + 1}</h3>
-                  <p className="text-sm text-gray-600 mb-2">Quantity: 1</p>
-                  <p className="text-lg font-semibold text-blue-600">${(299.99 * (i + 1)).toFixed(2)}</p>
+                  <h3 className="font-semibold mb-1">{item.name}</h3>
+                  <p className="text-sm text-gray-600 mb-2">Qty: {item.quantity}</p>
+                  <p className="text-lg font-semibold text-blue-600">${item.price}</p>
                 </div>
               </div>
             ))}
@@ -175,24 +185,24 @@ export function OrderConfirmationPage() {
             <CreditCard className="w-5 h-5 text-blue-600" />
             <h2 className="text-xl font-semibold">Payment Summary</h2>
           </div>
-          
-          <div className="space-y-3 mb-4">
+
+          <div hidden className="space-y-3 mb-4">
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal</span>
-              <span className="font-semibold">$899.97</span>
+              <span className="font-semibold">${order.subtotal}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Shipping</span>
-              <span className="font-semibold text-green-600">FREE</span>
+              <span className="font-semibold text-green-600">{order.shippingMethod === "standard" ? "FREE" : "$15"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Tax</span>
-              <span className="font-semibold">$72.00</span>
+              <span className="font-semibold">${order.tax}</span>
             </div>
             <div className="flex justify-between pt-3 border-t border-blue-200">
               <span className="text-lg font-semibold">Total</span>
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                $971.97
+                ${order.total}
               </span>
             </div>
           </div>
@@ -201,29 +211,29 @@ export function OrderConfirmationPage() {
             <p className="text-sm text-gray-700 mb-1">Payment Method</p>
             <div className="flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-gray-600" />
-              <span className="font-semibold">Visa ending in 4242</span>
+              <span className="font-semibold">{order.paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment"}</span>
             </div>
           </div>
         </Card>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-blue-600 text-blue-600 hover:bg-blue-50"
           >
             <Download className="mr-2 w-4 h-4" />
             Download Invoice
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-purple-600 text-purple-600 hover:bg-purple-50"
           >
             <Mail className="mr-2 w-4 h-4" />
             Email Receipt
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-blue-600 text-blue-600 hover:bg-blue-50"
           >
             <Truck className="mr-2 w-4 h-4" />
@@ -234,8 +244,8 @@ export function OrderConfirmationPage() {
         {/* Continue Shopping */}
         <div className="text-center">
           <Link to="/shop">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               Continue Shopping

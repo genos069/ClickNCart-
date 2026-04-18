@@ -40,7 +40,7 @@ export const updateCart = (productId, quantity, token) =>
 
 export const updateShippingMethod = (method, token) =>
   API.put(
-    "/api/cart/shipping",
+    "/cart/shipping",
     { method },
     {
       headers: { Authorization: `Bearer ${token}` },
