@@ -37,6 +37,7 @@ export function CheckoutPage() {
     zip: "",
   });
 
+
   const [loading, setLoading] = useState(true);
 
   const user = JSON.parse(localStorage.getItem("userInfo") || "null");
@@ -275,7 +276,7 @@ export function CheckoutPage() {
                     </Card>
 
                     {/* ONLINE */}
-                    <Card className="p-4 cursor-pointer border border-blue-100">
+                    <Card hidden className="p-4 cursor-pointer border border-blue-100">
                       <div className="flex items-center gap-3">
                         <RadioGroupItem value="online" id="online" />
                         <Label htmlFor="online" className="flex-1 cursor-pointer">
@@ -287,12 +288,12 @@ export function CheckoutPage() {
                 </div>
 
                 <form className="space-y-6">
-                  <div>
+                  <div hidden>
                     <Label htmlFor="cardNumber">Card Number</Label>
                     <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div hidden className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="expiry">Expiry Date</Label>
                       <Input id="expiry" placeholder="MM/YY" />
@@ -303,7 +304,7 @@ export function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div>
+                  <div hidden>
                     <Label htmlFor="cardName">Name on Card</Label>
                     <Input id="cardName" placeholder="John Doe" />
                   </div>
@@ -316,6 +317,10 @@ export function CheckoutPage() {
                     <Button type="button" size="lg" className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                       onClick={async () => {
                         try {
+                          if (!paymentMethod) {
+                            alert("Please select payment method");
+                            return;
+                          }
                           await savePaymentMethod(paymentMethod, user.token);
                           setStep("review");
                         } catch (err) {
@@ -389,11 +394,19 @@ export function CheckoutPage() {
                     className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     onClick={async () => {
                       try {
-                        await placeOrder(user.token);
-                        navigate("/order-confirmation");
-                      } catch (err) {
-                        console.log(err);
-                        alert("Order failed");
+                        if (!paymentMethod) {
+                          alert("Please select payment method");
+                          return;
+                        }
+                        const { data } = await placeOrder(user.token);
+                        navigate("/order-confirmation", {
+                          state: { order: data },
+                        });
+
+                      } catch (err: any) {
+                          console.log("FULL ERROR:", err);
+  console.log("RESPONSE:", err.response?.data);
+                        alert(err || "Order failed");
                       }
                     }}
                   >

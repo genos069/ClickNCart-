@@ -1,7 +1,7 @@
 import API from "./api";
 
 export const placeOrder = async (token) => API.post(
-    "/api/orders",
+    "/orders",
     {},
     {
       headers: { Authorization: `Bearer ${token}` },
