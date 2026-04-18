@@ -24,6 +24,8 @@ export function ShopPage() {
   const [sortBy, setSortBy] = useState("featured");
 
   const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const brandFromUrl = params.get("brand");
 
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -42,12 +44,14 @@ export function ShopPage() {
     const fetchData = async () => {
       const params = new URLSearchParams(location.search);
       const search = params.get("search");
+      const brand = params.get("brand");
 
       try {
         setLoading(true);
 
         const data = await searchProducts({
           search: search || "",
+          brand: brand || "",
           limit: 80, // optional safety (frontend override)
         });
 
@@ -85,6 +89,8 @@ export function ShopPage() {
   };
 
   const filteredProducts = apiProducts.filter((product) => {
+    const matchesBrand = !brandFromUrl || product.brand === brandFromUrl;
+
     const matchesCategory =
       selectedCategories.length === 0 ||
       selectedCategories.includes(product.category);
@@ -98,7 +104,13 @@ export function ShopPage() {
 
     const matchesStock = inStockOnly ? product.inStock : true;
 
-    return matchesCategory && matchesPrice && matchesRating && matchesStock;
+    return (
+      matchesBrand &&
+      matchesCategory &&
+      matchesPrice &&
+      matchesRating &&
+      matchesStock
+    );
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {

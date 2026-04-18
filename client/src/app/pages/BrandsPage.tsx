@@ -120,7 +120,7 @@ export function BrandsPage() {
                       <p className="text-xs text-gray-600">Rating</p>
                     </div>
                   </div>
-                  <Link to={`/brands/${brand._id}`}>
+                  <Link to={`/shop?brand=${brand._id}`}>
                     <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                       Explore {brand.name}{" "}
                       <ArrowRight className="ml-2 w-4 h-4" />
