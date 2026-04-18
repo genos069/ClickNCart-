@@ -56,3 +56,10 @@ export const saveAddress = (address, token) =>
   });
 ;
 
+export const applyAiDiscount = async (token) => API.post(
+    "/cart/apply-ai-discount",
+    {},
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );

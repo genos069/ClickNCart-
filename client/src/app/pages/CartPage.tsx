@@ -13,6 +13,7 @@ import {
   applyPromo,
   updateCart,
 } from "../../services/cartServices";
+import { applyAiDiscount } from "../../services/cartServices";
 
 export function CartPage() {
 
@@ -32,24 +33,6 @@ export function CartPage() {
   // ✅ Get user
   const user = JSON.parse(localStorage.getItem("userInfo") || "null");
 
-
-  // 🟢 FETCH CART FROM BACKEND
-  useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        if (!user) return;
-
-        const { data } = await getCart(user.token);
-        setCardData(data);
-
-        localStorage.setItem("cartCount", data.items.length);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchCart();
-  }, []);
 
   const handleApplyPromo = async () => {
     try {
@@ -98,6 +81,28 @@ export function CartPage() {
       console.log(error);
     }
   };
+
+
+  useEffect(() => {
+  const fetchCart = async () => {
+    try {
+      if (!user) return;
+
+      const { data } = await getCart(user.token);
+
+      // 🔥 Call AI model
+      const aiDiscount = await applyAiDiscount(user.token);
+
+      setCardData(aiDiscount.data);
+
+      localStorage.setItem("cartCount", data.items.length);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  fetchCart();
+}, []);
 
 
 
