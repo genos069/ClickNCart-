@@ -13,6 +13,6 @@ export const submitReview = async (data, token) => {
   );
 };
 
-export const getProductReviews = (productId) => {
-  return API.get(`/review/product/get/${productId}`);
+export const getProductReviews = (productId, page = 1) => {
+  return API.get(`/review/product/get/${productId}`, { params: { page } });
 };

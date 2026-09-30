@@ -1,5 +1,6 @@
+import type { Brand, Product } from "../types";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -8,9 +9,10 @@ import { fetchBrands } from "../../services/brandService";
 import { fetchProducts } from "../../services/productServices";
 
 export function BrandsPage() {
-  const [brands, setBrands] = useState([]);
+  const navigate = useNavigate();
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [selectedBrand, setSelectedBrand] = useState(null);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -148,7 +150,12 @@ export function BrandsPage() {
               <Card
                 key={brand._id}
                 className="group cursor-pointer border border-blue-100 hover:border-blue-300 hover:shadow-lg transition-all duration-300"
-                onClick={() => setSelectedBrand(brand.id)}
+                role="link"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") navigate(`/shop?brand=${brand._id}`);
+                }}
+                onClick={() => navigate(`/shop?brand=${brand._id}`)}
               >
                 <div className="p-6 text-center">
                   <div
@@ -179,7 +186,7 @@ export function BrandsPage() {
                 size="lg"
                 className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 group"
               >
-                See More Brands
+                Browse All Products
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>

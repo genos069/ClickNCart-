@@ -5,7 +5,10 @@ export const createBrand = async (req, res) => {
   try {
     const { name, logo, description, rating, featured, color } = req.body;
 
-    const existing = await Brand.findOne({ name });
+    const existing = await Brand.findOne({ name }).collation({
+      locale: "en",
+      strength: 2,
+    });
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -28,10 +31,7 @@ export const createBrand = async (req, res) => {
       data: brand,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    throw error;
   }
 };
 
@@ -45,10 +45,7 @@ export const getAllBrands = async (req, res) => {
       data: brands,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    throw error;
   }
 };
 
@@ -70,10 +67,7 @@ export const getBrandById = async (req, res) => {
       data: brand,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    throw error;
   }
 };
 
@@ -100,10 +94,7 @@ export const updateBrand = async (req, res) => {
       data: updatedBrand,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    throw error;
   }
 };
 
@@ -111,6 +102,8 @@ export const deleteBrand = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (await Product.exists({ brand: id }))
+      return res.status(409).json({ message: "Brand still has products" });
     const deletedBrand = await Brand.findByIdAndDelete(id);
 
     if (!deletedBrand) {
@@ -125,10 +118,7 @@ export const deleteBrand = async (req, res) => {
       message: "Brand deleted successfully",
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    throw error;
   }
 };
 
@@ -161,11 +151,7 @@ export const getBrandsForFrontend = async (req, res) => {
       data: formatted,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch brands",
-      error: error.message,
-    });
+    throw error;
   }
 };
 
@@ -185,11 +171,7 @@ export const getHomePageData = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load homepage data",
-      error: error.message,
-    });
+    throw error;
   }
 };
 
@@ -212,7 +194,10 @@ export const seedBrands = async (req, res) => {
       }
 
       // avoid duplicates
-      const exists = await Brand.findOne({ name: b.name });
+      const exists = await Brand.findOne({ name: b.name }).collation({
+        locale: "en",
+        strength: 2,
+      });
       if (exists) continue;
 
       formatted.push({
@@ -235,11 +220,7 @@ export const seedBrands = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Seeding failed",
-      error: error.message,
-    });
+    throw error;
   }
 };
 
@@ -254,8 +235,6 @@ export const brandPage = async (req, res) => {
           brand: brand._id,
         });
 
-
-
         return {
           ...brand.toObject(),
           products: count,
@@ -268,9 +247,6 @@ export const brandPage = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    throw error;
   }
 };

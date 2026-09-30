@@ -16,10 +16,12 @@ const productSchema = new mongoose.Schema(
 
     price: {
       type: Number,
+      min: 0,
       required: true,
     },
     originalPrice: {
       type: Number,
+      min: 0,
     },
     image: {
       type: String,
@@ -27,6 +29,7 @@ const productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
+      trim: true,
       required: true,
       enum: [
         "Accessories",
@@ -46,17 +49,19 @@ const productSchema = new mongoose.Schema(
         "Office",
         "Photography",
         "Printers",
-        "Smart Home ",
-        "Storage  ",
-        "TVs ",
-        "Tablets ",
-        "Tech  ",
-        "Transport ",
+        "Smart Home",
+        "Storage",
+        "TVs",
+        "Tablets",
+        "Tech",
+        "Transport",
         "Wearables",
         "Medical",
       ],
       index: true,
     },
+    reviews: { type: Number, default: 0, min: 0 },
+    images: { type: [String], default: [] },
     rating: {
       type: Number,
       min: 0,

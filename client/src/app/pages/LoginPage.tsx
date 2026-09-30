@@ -1,3 +1,4 @@
+import { getSession, saveSession, clearSession } from "../../services/session";
 
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button.js";
@@ -15,16 +16,16 @@ export function LoginPage() {
   const navigate = useNavigate();
 
   // Get user from localStorage
-  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "null");
+  const userInfo = getSession();
 
   useEffect(() => {
-    if (userInfo) {
+    if (userInfo?.token) {
       navigate("/profile");
     }
-  }, [userInfo, navigate]);
+  }, [userInfo?.token, navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("userInfo");
+    clearSession();
     navigate("/login");
   };
 
@@ -47,7 +48,10 @@ export function LoginPage() {
   };
 
   const handleSignupChange = (e: any) => {
-    setSignupData({ ...signupData, [e.target.id.split("-")[1]]: e.target.value });
+    setSignupData({
+      ...signupData,
+      [e.target.id.split("-")[1]]: e.target.value,
+    });
   };
 
   const handleLogin = async (e: any) => {
@@ -57,7 +61,7 @@ export function LoginPage() {
       const { data } = await loginUser(loginData);
 
       // Save token
-      localStorage.setItem("userInfo", JSON.stringify(data));
+      saveSession(data);
 
       alert("Login successful ✅");
 
@@ -80,7 +84,7 @@ export function LoginPage() {
         password: signupData.password,
       });
 
-      localStorage.setItem("userInfo", JSON.stringify(data));
+      saveSession(data);
 
       alert("Account created ✅");
 
@@ -91,7 +95,6 @@ export function LoginPage() {
   };
 
   return (
-
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
       <div className="w-full max-w-6xl relative">
         {/* Main Container */}
@@ -99,12 +102,16 @@ export function LoginPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
             {/* Login Form */}
             <div
-              className={`flex items-center justify-center p-8 lg:p-12 transition-all duration-700 ${isSignUp ? "lg:order-2" : "lg:order-1"
-                }`}
+              className={`${isSignUp ? "hidden lg:flex" : "flex"} items-center justify-center p-8 lg:p-12 transition-all duration-700 ${
+                isSignUp ? "lg:order-2" : "lg:order-1"
+              }`}
             >
               <div
-                className={`w-full max-w-md transition-all duration-700 ${isSignUp ? "lg:opacity-0 lg:invisible lg:translate-x-10" : "lg:opacity-100 lg:visible lg:translate-x-0"
-                  }`}
+                className={`w-full max-w-md transition-all duration-700 ${
+                  isSignUp
+                    ? "lg:opacity-0 lg:invisible lg:translate-x-10"
+                    : "lg:opacity-100 lg:visible lg:translate-x-0"
+                }`}
               >
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 mb-4">
@@ -190,12 +197,16 @@ export function LoginPage() {
 
             {/* Sign Up Form */}
             <div
-              className={`flex items-center justify-center p-8 lg:p-12 transition-all duration-700 ${isSignUp ? "lg:order-2" : "lg:order-1"
-                }`}
+              className={`${isSignUp ? "flex" : "hidden lg:flex"} items-center justify-center p-8 lg:p-12 transition-all duration-700 ${
+                isSignUp ? "lg:order-2" : "lg:order-1"
+              }`}
             >
               <div
-                className={`w-full max-w-md transition-all duration-700 ${isSignUp ? "lg:opacity-100 lg:visible lg:translate-x-0" : "lg:opacity-0 lg:invisible lg:-translate-x-10"
-                  }`}
+                className={`w-full max-w-md transition-all duration-700 ${
+                  isSignUp
+                    ? "lg:opacity-100 lg:visible lg:translate-x-0"
+                    : "lg:opacity-0 lg:invisible lg:-translate-x-10"
+                }`}
               >
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 mb-4">
@@ -244,6 +255,8 @@ export function LoginPage() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="signup-password"
+                        minLength={8}
+                        maxLength={72}
                         type={showPassword ? "text" : "password"}
                         onChange={handleSignupChange}
                         placeholder="••••••••"
@@ -264,7 +277,9 @@ export function LoginPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                    <Label htmlFor="signup-confirm-password">
+                      Confirm Password
+                    </Label>
                     <div className="relative mt-2">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
@@ -275,25 +290,6 @@ export function LoginPage() {
                         className="pl-10 h-12 border-purple-200 focus:ring-purple-500"
                       />
                     </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      required
-                      className="w-4 h-4 mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                    />
-                    <label htmlFor="terms" className="text-sm text-gray-600">
-                      I agree to the{" "}
-                      <a href="#" className="text-purple-600 hover:text-purple-700">
-                        Terms of Service
-                      </a>{" "}
-                      and{" "}
-                      <a href="#" className="text-purple-600 hover:text-purple-700">
-                        Privacy Policy
-                      </a>
-                    </label>
                   </div>
 
                   <Button
@@ -320,19 +316,24 @@ export function LoginPage() {
 
           {/* Sliding Overlay Panel */}
           <div
-            className={`hidden lg:block absolute top-0 bottom-0 w-1/2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 transition-all duration-700 ease-in-out ${isSignUp ? "left-0 rounded-r-[40px]" : "left-1/2 rounded-l-[40px]"
-              }`}
+            className={`hidden lg:block absolute top-0 bottom-0 w-1/2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 transition-all duration-700 ease-in-out ${
+              isSignUp ? "left-0 rounded-r-[40px]" : "left-1/2 rounded-l-[40px]"
+            }`}
           >
             <div className="h-full flex items-center justify-center p-12 text-white">
               <div
-                className={`text-center transition-all duration-700 ${isSignUp ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"
-                  }`}
+                className={`text-center transition-all duration-700 ${
+                  isSignUp
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-10"
+                }`}
               >
                 {isSignUp && (
                   <div className="space-y-6">
                     <h2 className="text-4xl font-bold">Hello, Friend!</h2>
                     <p className="text-blue-100 text-lg">
-                      Already have an account? Sign in to access your personalized shopping experience.
+                      Already have an account? Sign in to access your
+                      personalized shopping experience.
                     </p>
                     <Button
                       onClick={() => setIsSignUp(false)}
@@ -352,14 +353,18 @@ export function LoginPage() {
               </div>
 
               <div
-                className={`text-center transition-all duration-700 absolute ${!isSignUp ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"
-                  }`}
+                className={`text-center transition-all duration-700 absolute ${
+                  !isSignUp
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 translate-x-10"
+                }`}
               >
                 {!isSignUp && (
                   <div className="space-y-6">
                     <h2 className="text-4xl font-bold">New Here?</h2>
                     <p className="text-blue-100 text-lg">
-                      Create an account and discover amazing products tailored just for you!
+                      Create an account and discover amazing products tailored
+                      just for you!
                     </p>
                     <Button
                       onClick={() => setIsSignUp(true)}
@@ -383,7 +388,10 @@ export function LoginPage() {
 
         {/* Back to Home Link */}
         <div className="text-center mt-8">
-          <Link to="/" className="text-gray-600 hover:text-blue-600 transition-colors inline-flex items-center gap-2">
+          <Link
+            to="/"
+            className="text-gray-600 hover:text-blue-600 transition-colors inline-flex items-center gap-2"
+          >
             <ShoppingCart className="w-4 h-4" />
             <span>Back to SmartShop</span>
           </Link>

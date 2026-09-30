@@ -1,3 +1,6 @@
+import type { Product, Review } from "../types";
+import { getFavorites, toggleFavorite } from "../../services/favorites";
+import { getSession } from "../../services/session";
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
@@ -31,23 +34,34 @@ import { submitReview, getProductReviews } from "../../services/reviewServices";
 export function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "null");
+  const userInfo = getSession();
 
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [quantity, setQuantity] = useState(1);
+  const [favorite, setFavorite] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewPages, setReviewPages] = useState(1);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  useEffect(() => {
+    setFavorite(getFavorites().includes(id || ""));
+    setSelectedImage(0);
+    setQuantity(1);
+    setReviewPage(1);
+  }, [id]);
   const [selectedImage, setSelectedImage] = useState(0);
 
-  const [relatedProducts, setRelatedProducts] = useState([]);
-  const [reviews, setReviews] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [reviewText, setReviewText] = useState("");
 
-  const handleSubmitReview = async (e) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!product) return;
 
     if (!userInfo?.token) {
       navigate("/login");
@@ -68,6 +82,14 @@ export function ProductDetailPage() {
       };
 
       await submitReview(reviewData, userInfo.token);
+      const [updatedReviews, updatedProduct] = await Promise.all([
+        getProductReviews(id),
+        getProductById(id),
+      ]);
+      setReviews(updatedReviews.data.data);
+      setReviewPages(updatedReviews.data.pages);
+      setReviewPage(1);
+      setProduct(updatedProduct.data);
 
       alert("Review submitted");
 
@@ -81,11 +103,17 @@ export function ProductDetailPage() {
   };
 
   const handleAddToCart = async () => {
+    if (!product) return;
+    if (!getSession()) {
+      navigate("/login");
+      return;
+    }
     try {
-      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      const userInfo = getSession();
       await addToCart(
         {
           productId: product._id,
+          quantity,
           name: product.name,
           price: product.price,
           image: product.image,
@@ -100,53 +128,32 @@ export function ProductDetailPage() {
   };
 
   useEffect(() => {
-    const fetchReviews = async () => {
-      if (!id) return;
-
-      try {
-        const res = await getProductReviews(id);
-        setReviews(res.data.data || []);
-      } catch (err) {
-        console.error("Failed to load reviews", err);
-      }
+    let active = true;
+    setLoading(true);
+    Promise.all([
+      getProductById(id),
+      getProductReviews(id),
+      getRelatedProducts(id),
+    ])
+      .then(([p, r, related]) => {
+        if (active) {
+          setProduct(p.data);
+          setReviews(r.data.data || []);
+          setReviewPages(r.data.pages || 1);
+          setRelatedProducts(related.data || []);
+        }
+      })
+      .catch(() => {
+        if (active) setProduct(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
     };
-
-    fetchReviews();
   }, [id]);
 
-  useEffect(() => {
-    const fetchRelated = async () => {
-      if (!id) return;
-
-      const res = await getRelatedProducts(id);
-      setRelatedProducts(res?.data?.data ?? res?.data ?? null);
-    };
-
-    fetchRelated();
-  }, [id]);
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
-
-      try {
-        setLoading(true);
-
-        const res = await getProductById(id);
-
-        setProduct(res?.data?.data ?? res?.data ?? null);
-      } catch (err) {
-        console.error("Failed to fetch product", err);
-        setProduct(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id]);
-
-  // LOADING STATE FIRST
   if (loading) {
     return <p className="text-center py-10">Loading product...</p>;
   }
@@ -197,7 +204,11 @@ export function ProductDetailPage() {
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-100">
               <img
-                src={product.image}
+                src={
+                  (product.images?.length ? product.images : [product.image])[
+                    selectedImage
+                  ] || product.image
+                }
                 alt={product.name}
                 className="w-full aspect-square object-cover"
               />
@@ -208,21 +219,25 @@ export function ProductDetailPage() {
               )}
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(i)}
-                  className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 border-2 transition-colors ${
-                    selectedImage === i ? "border-blue-600" : "border-blue-100"
-                  }`}
-                >
-                  <img
-                    src={product.image}
-                    alt={`${product.name} ${i + 1}`}
-                    className="w-full aspect-square object-cover"
-                  />
-                </button>
-              ))}
+              {(product.images?.length ? product.images : [product.image]).map(
+                (image, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImage(i)}
+                    className={`relative overflow-hidden rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 border-2 transition-colors ${
+                      selectedImage === i
+                        ? "border-blue-600"
+                        : "border-blue-100"
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} ${i + 1}`}
+                      className="w-full aspect-square object-cover"
+                    />
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -316,7 +331,7 @@ export function ProductDetailPage() {
                   {quantity}
                 </span>
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={() => setQuantity(Math.min(99, quantity + 1))}
                   className="px-4 py-3 hover:bg-blue-50 transition-colors"
                 >
                   +
@@ -333,13 +348,34 @@ export function ProductDetailPage() {
               <Button
                 size="lg"
                 variant="outline"
+                aria-label="Toggle favorite"
+                aria-pressed={favorite}
+                onClick={() =>
+                  setFavorite(toggleFavorite(product._id).includes(product._id))
+                }
                 className="border-blue-600 text-blue-600 hover:bg-blue-50"
               >
-                <Heart className="w-5 h-5" />
+                <Heart
+                  className={`w-5 h-5 ${favorite ? "fill-pink-500 text-pink-500" : ""}`}
+                />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
+                aria-label="Share product"
+                onClick={async () => {
+                  try {
+                    if (navigator.share)
+                      await navigator.share({
+                        title: product.name,
+                        url: location.href,
+                      });
+                    else {
+                      await navigator.clipboard.writeText(location.href);
+                      alert("Link copied");
+                    }
+                  } catch {}
+                }}
                 className="border-blue-600 text-blue-600 hover:bg-blue-50"
               >
                 <Share2 className="w-5 h-5" />
@@ -519,38 +555,6 @@ export function ProductDetailPage() {
                         </div>
                       </div>
 
-                      {/* Image Upload */}
-                      <div>
-                        <Label htmlFor="review-images">
-                          Add Photos (optional)
-                        </Label>
-                        <div className="mt-2 border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-                          <input
-                            id="review-images"
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="hidden"
-                          />
-                          <label
-                            htmlFor="review-images"
-                            className="cursor-pointer"
-                          >
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                <Package className="w-6 h-6 text-blue-600" />
-                              </div>
-                              <p className="text-sm text-gray-600">
-                                Click to upload photos
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, JPG up to 5MB
-                              </p>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-
                       <Button
                         type="submit"
                         className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
@@ -599,9 +603,11 @@ export function ProductDetailPage() {
                                         />
                                       ))}
                                     </div>
-                                    <Badge className="bg-green-100 text-green-700 border-0 text-xs">
-                                      Verified Purchase
-                                    </Badge>
+                                    {review.verifiedPurchase && (
+                                      <Badge className="bg-green-100 text-green-700 border-0 text-xs">
+                                        Verified Purchase
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                                 <p className="text-sm text-gray-500">
@@ -618,26 +624,38 @@ export function ProductDetailPage() {
                               <p className="text-gray-600 mb-3">
                                 {review.comment}
                               </p>
-                              <div className="flex items-center gap-4 text-sm">
-                                <button className="text-gray-600 hover:text-blue-600 transition-colors">
-                                  👍 Helpful (
-                                  {Math.floor(Math.random() * 20) + 5})
-                                </button>
-                                <button className="text-gray-600 hover:text-blue-600 transition-colors">
-                                  Reply
-                                </button>
-                              </div>
                             </div>
                           </div>
                         </Card>
                       ))}
 
-                      <Button
-                        variant="outline"
-                        className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
-                      >
-                        Load More Reviews
-                      </Button>
+                      {reviewPage < reviewPages && (
+                        <Button
+                          disabled={reviewBusy}
+                          variant="outline"
+                          className="w-full"
+                          onClick={async () => {
+                            setReviewBusy(true);
+                            try {
+                              const response = await getProductReviews(
+                                id,
+                                reviewPage + 1,
+                              );
+                              setReviews((old) => [
+                                ...old,
+                                ...response.data.data,
+                              ]);
+                              setReviewPage((p) => p + 1);
+                            } catch {
+                              alert("Unable to load reviews");
+                            } finally {
+                              setReviewBusy(false);
+                            }
+                          }}
+                        >
+                          Load More Reviews
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>

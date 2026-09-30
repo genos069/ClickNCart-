@@ -25,5 +25,4 @@ router.put("/shipping", protect, updateShipping);
 router.put("/address", protect, saveShippingAddress);
 router.post("/apply-ai-discount", protect, applyAIDiscount);
 
-
 export default router;

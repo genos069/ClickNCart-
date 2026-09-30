@@ -1,15 +1,12 @@
 import Cart from "../models/Cart.js";
-
+import { fail } from "../utils/validation.js";
+import { cartResponse } from "../services/cartService.js";
 export const savePaymentMethod = async (req, res) => {
-  const { paymentMethod } = req.body;
+  if (req.body.paymentMethod !== "cod")
+    fail("Only cash on delivery is supported");
   const cart = await Cart.findOne({ user: req.user._id });
-
-  if (!cart) {
-    return res.status(404).json({ message: "Cart not found" });
-  }
-
-  cart.paymentMethod = paymentMethod;
+  if (!cart) fail("Cart not found", 404);
+  cart.paymentMethod = "cod";
   await cart.save();
-
-  res.json(cart);
+  res.json(cartResponse(cart));
 };

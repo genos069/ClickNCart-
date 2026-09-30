@@ -26,7 +26,7 @@ export const applyPromo = (code, token) =>
     { code },
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
 
 export const updateCart = (productId, quantity, token) =>
@@ -35,7 +35,7 @@ export const updateCart = (productId, quantity, token) =>
     { productId, quantity },
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
 
 export const updateShippingMethod = (method, token) =>
@@ -44,22 +44,19 @@ export const updateShippingMethod = (method, token) =>
     { method },
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
-;
-
 export const saveAddress = (address, token) =>
   API.put("/cart/address", address, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-;
-
-export const applyAiDiscount = async (token) => API.post(
+export const applyAiDiscount = async (token) =>
+  API.post(
     "/cart/apply-ai-discount",
     {},
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );

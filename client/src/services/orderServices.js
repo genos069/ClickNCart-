@@ -1,10 +1,7 @@
 import API from "./api";
-
-export const placeOrder = async (token) => API.post(
+export const placeOrder = (cart, key) =>
+  API.post(
     "/orders",
-    {},
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
+    { cartVersion: cart.version, expectedTotal: cart.total },
+    { headers: { "Idempotency-Key": key } },
   );
-;

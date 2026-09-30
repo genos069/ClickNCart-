@@ -1,72 +1,63 @@
 import axios from "axios";
 import Cart from "../models/Cart.js";
-// Assuming you have a User model to get past purchase data
-import User from "../models/User.js"; 
-
+import Order from "../models/Order.js";
+import { cartResponse, refreshPrices } from "../services/cartService.js";
 export const applyAIDiscount = async (req, res) => {
+  const cart = await Cart.findOne({ user: req.user._id });
+  if (
+    !cart?.items.length ||
+    cart.promoCode ||
+    !process.env.AI_DISCOUNT_URL ||
+    !process.env.AI_API_KEY
+  )
+    return res.json(cartResponse(cart));
+  await refreshPrices(cart);
+  const history = await Order.aggregate([
+    { $match: { user: req.user._id, isDelivered: true } },
+    {
+      $group: {
+        _id: null,
+        count: { $sum: 1 },
+        spend: { $sum: "$total" },
+        last: { $max: "$createdAt" },
+      },
+    },
+  ]);
+  const stats = history[0];
   try {
-    const cart = await Cart.findOne({ user: req.user._id });
-    const user = await User.findById(req.user._id); // Fetch user stats for the AI
-
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ message: "Cart is empty" });
-    }
-
-    // 🔢 Calculate subtotal
-    const subtotal = cart.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    // 🧠 Map Node variables to EXACT Python FastAPI Schema requirements
-    const aiPayload = {
-      user_id: req.user._id.toString(),
-      time_on_page: req.body.timeOnPage || 60, // You can pass this from the React frontend!
-      items_in_cart: cart.items.length,
-      cart_value: subtotal,
-      is_new: user.numPurchases === 0,
-      num_purchases: user.numPurchases || 0,
-      days_since_last: user.daysSinceLastPurchase || 0,
-      past_total_spend: user.pastTotalSpend || 0
-    };
-
-    // 🤖 Call Python AI API
-    const aiResponse = await axios.post(
-      "https://dynamic-discount-api.onrender.com/api/v1/get-discount",
-      aiPayload,
+    const { data } = await axios.post(
+      process.env.AI_DISCOUNT_URL,
       {
-        headers: {
-          // Keep the hackers out!
-          "X-API-Key": "super-secret-enterprise-key-123" 
-        }
-      }
+        user_id: String(req.user._id),
+        time_on_page: 60,
+        items_in_cart: cart.items.length,
+        cart_value: cartResponse(cart).subtotal,
+        is_new: !stats?.count,
+        num_purchases: stats?.count || 0,
+        past_total_spend: stats?.spend || 0,
+        days_since_last: stats?.last
+          ? Math.floor((Date.now() - stats.last.getTime()) / 86400000)
+          : 0,
+      },
+      {
+        timeout: 4000,
+        maxRedirects: 0,
+        headers: { "X-API-Key": process.env.AI_API_KEY },
+      },
     );
-
-    // 🎯 Catch the exact variable name Python spits out
-    const aiDiscount = aiResponse.data.final_discount_pct; 
-
-    // 💾 Save discount into cart
-    cart.discount = aiDiscount;
-    await cart.save();
-
-    // 📊 Recalculate totals
-    const shipping = subtotal > 100 ? 0 : 15;
-    const tax = subtotal * 0.08;
-    const discountAmount = (subtotal * cart.discount) / 100;
-    const total = subtotal + shipping + tax - discountAmount;
-
-    res.json({
-      items: cart.items,
-      subtotal,
-      shipping,
-      tax,
-      discount: cart.discount,
-      discountAmount,
-      total,
-      ai_probability_score: aiResponse.data.purchase_probability // Fun extra data to log!
-    });
-  } catch (error) {
-    console.error("AI Request Failed:", error.response?.data || error.message);
-    res.status(500).json({ message: "AI discount failed" });
+    const discount = data.final_discount_pct;
+    if (
+      typeof discount === "number" &&
+      Number.isFinite(discount) &&
+      discount >= 0 &&
+      discount <= 50
+    ) {
+      cart.discount = discount;
+      await cart.save();
+    }
+  } catch {
+    /* Optional recommendation must never block the cart. */
   }
+  const latest = await Cart.findOne({ user: req.user._id });
+  res.json(cartResponse(latest));
 };

@@ -1,10 +1,10 @@
+import { getSession } from "../../services/session";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { X, Plus, Minus, ShoppingBag, ArrowRight, Tag } from "lucide-react";
-import { products } from "../data/products";
 import {
   getCart,
   removeFromCart,
@@ -16,7 +16,8 @@ import {
 import { applyAiDiscount } from "../../services/cartServices";
 
 export function CartPage() {
-
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [CardData, setCardData] = useState<any>({
@@ -27,12 +28,11 @@ export function CartPage() {
     discount: 0,
     discountAmount: 0,
     total: 0,
-    updateCart
+    updateCart,
   });
 
   // ✅ Get user
-  const user = JSON.parse(localStorage.getItem("userInfo") || "null");
-
+  const user = getSession();
 
   const handleApplyPromo = async () => {
     try {
@@ -46,71 +46,86 @@ export function CartPage() {
     }
   };
 
-
   // ➕ INCREASE QUANTITY
   const increaseQuantity = async (item: any) => {
-  const { data } = await updateCart(
-    item.productId,
-    item.quantity + 1,
-    user.token
-  );
+    try {
+      const { data } = await updateCart(
+        item.productId,
+        item.quantity + 1,
+        user.token,
+      );
 
-  setCardData(data);
-};
-
+      setCardData(data);
+    } catch (e: any) {
+      alert(e.response?.data?.message || "Unable to update cart");
+    }
+  };
 
   // ➖ DECREASE QUANTITY (Frontend Adjust OR Backend API if you add later)
   const decreaseQuantity = async (item: any) => {
-  const { data } = await updateCart(
-    item.productId,
-    item.quantity - 1,
-    user.token
-  );
+    try {
+      const { data } = await updateCart(
+        item.productId,
+        item.quantity - 1,
+        user.token,
+      );
 
-  setCardData(data);
-};
-
+      setCardData(data);
+    } catch (e: any) {
+      alert(e.response?.data?.message || "Unable to update cart");
+    }
+  };
 
   // ❌ REMOVE ITEM
   const handleRemove = async (productId: string) => {
     try {
       const { data } = await removeFromCart(productId, user.token);
       setCardData(data);
-      localStorage.setItem("cartCount", data.items.length);
     } catch (error) {
-      console.log(error);
+      setError("Unable to update cart. Please retry.");
     }
   };
-
 
   useEffect(() => {
-  const fetchCart = async () => {
-    try {
-      if (!user) return;
+    const fetchCart = async () => {
+      try {
+        if (!user) return;
 
-      const { data } = await getCart(user.token);
+        const { data } = await getCart(user.token);
 
-      // 🔥 Call AI model
-      const aiDiscount = await applyAiDiscount(user.token);
+        setCardData(data);
+      } catch (error) {
+        setError("Unable to load cart. Please refresh and retry.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setCardData(aiDiscount.data);
+    fetchCart();
+  }, []);
 
-      localStorage.setItem("cartCount", data.items.length);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  fetchCart();
-}, []);
-
-
-
+  if (loading)
+    return (
+      <p role="status" className="p-10">
+        Loading cart…
+      </p>
+    );
   return (
     <div className="container mx-auto px-4 py-8">
+      {error && (
+        <p role="alert" className="p-4 bg-red-50 text-red-700">
+          {error}
+        </p>
+      )}
       <div className="mb-8">
         <h1 className="text-4xl mb-2">Shopping Cart</h1>
-        <p className="text-gray-600">{CardData.length} items in your cart</p>
+        <p className="text-gray-600">
+          {CardData.items.reduce(
+            (n: number, item: { quantity: number }) => n + item.quantity,
+            0,
+          )}{" "}
+          items in your cart
+        </p>
       </div>
 
       {CardData.items.length === 0 ? (
@@ -126,17 +141,20 @@ export function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items - Design 11: Detailed cart layout */}
           <div className="lg:col-span-2 space-y-4">
-            {CardData.items.map((item:any) => (
+            {CardData.items.map((item: any) => (
               <Card key={item.productId} className="p-6 border border-blue-100">
                 <div className="flex gap-6">
-                  <Link to={`/product/${item.productId}`} className="flex-shrink-0">
+                  <Link
+                    to={`/product/${item.productId}`}
+                    className="flex-shrink-0"
+                  >
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-32 h-32 object-cover rounded-lg bg-gradient-to-br from-blue-50 to-purple-50"
+                      className="w-20 h-20 sm:w-32 sm:h-32 object-cover rounded-lg bg-gradient-to-br from-blue-50 to-purple-50"
                     />
                   </Link>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex justify-between mb-2">
                       <Link to={`/product/${item.productId}`}>
                         <h3 className="font-semibold text-lg hover:text-blue-600 transition-colors">
@@ -150,7 +168,9 @@ export function CartPage() {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
-                    <p className="text-sm text-blue-600 mb-4 font-semibold">{item.category}</p>
+                    <p className="text-sm text-blue-600 mb-4 font-semibold">
+                      {item.category}
+                    </p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center border border-blue-200 rounded-lg">
                         <button
@@ -159,7 +179,9 @@ export function CartPage() {
                         >
                           <Minus className="w-4 h-4" />
                         </button>
-                        <span className="px-4 py-2 border-x border-blue-200 font-semibold">{item.quantity}</span>
+                        <span className="px-4 py-2 border-x border-blue-200 font-semibold">
+                          {item.quantity}
+                        </span>
                         <button
                           onClick={() => increaseQuantity(item)}
                           className="p-2 hover:bg-blue-50 transition-colors"
@@ -168,8 +190,12 @@ export function CartPage() {
                         </button>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${item.price * item.quantity}</p>
-                        <p className="text-sm text-gray-600">${item.price} each</p>
+                        <p className="text-2xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                          ${item.price * item.quantity}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          ${item.price} each
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -194,7 +220,10 @@ export function CartPage() {
                 <Button
                   disabled={!promoCode}
                   onClick={handleApplyPromo}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">Apply</Button>
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  Apply
+                </Button>
               </div>
             </Card>
           </div>
@@ -202,12 +231,16 @@ export function CartPage() {
           {/* Order Summary - Design 12: Sticky summary card */}
           <div className="lg:col-span-1">
             <Card className="p-6 sticky top-24 border border-blue-100">
-              <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Order Summary</h2>
+              <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Order Summary
+              </h2>
 
               <div className="space-y-4 mb-6 pb-6 border-b">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">${CardData.subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">
+                    ${CardData.subtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
@@ -221,7 +254,9 @@ export function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax (8%)</span>
-                  <span className="font-semibold">${CardData.tax.toFixed(2)}</span>
+                  <span className="font-semibold">
+                    ${CardData.tax.toFixed(2)}
+                  </span>
                 </div>
               </div>
               {CardData.discount > 0 && (
@@ -232,17 +267,26 @@ export function CartPage() {
               )}
               <div className="flex justify-between mb-6 text-xl">
                 <span className="font-semibold">Total</span>
-                <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${CardData.total.toFixed(2)}</span>
+                <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  ${CardData.total.toFixed(2)}
+                </span>
               </div>
 
               <Link to="/checkout">
-                <Button size="lg" className="w-full mb-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Button
+                  size="lg"
+                  className="w-full mb-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
                   Proceed to Checkout <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
 
               <Link to="/shop">
-                <Button variant="outline" size="lg" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
+                >
                   Continue Shopping
                 </Button>
               </Link>
@@ -250,7 +294,12 @@ export function CartPage() {
               {CardData.subtotal < 100 && (
                 <div className="mt-6 p-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-900">
-                    Add <span className="font-semibold">${(100 - CardData.subtotal).toFixed(2)}</span> more to get <span className="font-semibold">FREE shipping</span>!
+                    Add{" "}
+                    <span className="font-semibold">
+                      ${(100 - CardData.subtotal).toFixed(2)}
+                    </span>{" "}
+                    more to get{" "}
+                    <span className="font-semibold">FREE shipping</span>!
                   </p>
                 </div>
               )}

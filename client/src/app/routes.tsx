@@ -12,7 +12,7 @@ import { BrandsPage } from "./pages/BrandsPage";
 import { OrderConfirmationPage } from "./pages/OrderConfirmationPage";
 import ForgotPassword from "./pages/forgetPasswordPage";
 import ResetPassword from "./pages/ResetPassword";
-import ProfilePage  from "./pages/ProfilePage";
+import ProfilePage from "./pages/ProfilePage";
 
 export const router = createBrowserRouter([
   {
@@ -27,7 +27,7 @@ export const router = createBrowserRouter([
       { path: "favorites", element: <FavoritesPage /> },
       { path: "brands", element: <BrandsPage /> },
       { path: "sale", element: <SalePage /> },
-      { path: "order-confirmation", element: <OrderConfirmationPage /> },
+      { path: "order-confirmation/:id?", element: <OrderConfirmationPage /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password/:token", element: <ResetPassword /> },
       { path: "profile", element: <ProfilePage /> },

@@ -6,7 +6,7 @@ import {
   submitReview,
 } from "../controllers/reviewControllers.js";
 
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, admin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -15,6 +15,6 @@ router.post("/create/:productId", protect, createReview);
 router.get("/product/get/:productId", getProductReviews);
 
 // ML model
-router.post("/check", submitReview)
+router.post("/check", protect, admin, submitReview);
 
 export default router;

@@ -1,0 +1,26 @@
+name: Validate ClickNCart
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+      - run: npm ci --ignore-scripts
+        working-directory: server
+      - run: npm run check && npm test && npm audit --audit-level=high
+        working-directory: server
+      - run: npm ci --ignore-scripts
+        working-directory: client
+      - run: npm run build && npm audit --audit-level=high
+        working-directory: client

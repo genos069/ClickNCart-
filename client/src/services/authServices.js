@@ -10,4 +10,5 @@ export const registerUser = (data) => API.post("/auth/register", data);
 export const forgotPassword = (data) => API.post("/auth/forgot-password", data);
 
 // RESET PASSWORD
-export const resetPassword = (token, data) => API.put(`/auth/reset-password/${token}`, data);
+export const resetPassword = (token, data) =>
+  API.put(`/auth/reset-password/${token}`, data);

@@ -1,276 +1,193 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingCart, Search, Menu, User, Heart } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
-import { useEffect, useState } from "react";
-import { searchProducts } from "../../services/productServices";
-import { useNavigate } from "react-router-dom";
-
+import API from "../../services/api";
+import { getSession } from "../../services/session";
 export function Layout() {
-  const location = useLocation();
-  const [search, setSearch] = useState("");
-  const navigate = useNavigate();
-
-  const handleNotImplemented = (e) => {
-    e.preventDefault();
-    alert("Arriving Soon...");
-  };
-
-  const handleSearch = async () => {
-    if (!search.trim()) return;
-
-    try {
-      navigate(`/shop?search=${encodeURIComponent(search)}`);
-    } catch (error) {
-      console.error("Search failed:", error);
-    }
-  };
-
-  const [cartCount, setCartCount] = useState(0);
-
+  const location = useLocation(),
+    navigate = useNavigate(),
+    menuButton = useRef<HTMLButtonElement>(null);
+  const [search, setSearch] = useState(""),
+    [open, setOpen] = useState(false),
+    [count, setCount] = useState(0);
+  const links = [
+    ["/", "Home"],
+    ["/shop", "Shop"],
+    ["/brands", "Brands"],
+    ["/sale", "Sale"],
+  ];
   useEffect(() => {
-    const count = localStorage.getItem("cartCount");
-    setCartCount(count ? Number(count) : 0);
+    setOpen(false);
+  }, [location.pathname, location.search]);
+  useEffect(() => {
+    const sync = (e: Event) => setCount((e as CustomEvent).detail || 0);
+    const load = () => {
+      setCount(0);
+      if (getSession()) API.get("/cart").catch(() => {});
+    };
+    load();
+    window.addEventListener("cart-change", sync);
+    window.addEventListener("session-change", load);
+    window.addEventListener("storage", load);
+    return () => {
+      window.removeEventListener("cart-change", sync);
+      window.removeEventListener("session-change", load);
+      window.removeEventListener("storage", load);
+    };
   }, []);
-
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(`/shop?search=${encodeURIComponent(search.trim())}`);
+    setOpen(false);
+  };
+  const searchForm = (
+    <form onSubmit={submit} className="flex gap-2 w-full">
+      <input
+        aria-label="Search products"
+        maxLength={100}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search products…"
+        className="border border-blue-200 rounded-lg px-3 py-2 w-full min-w-0"
+      />
+      <Button type="submit" aria-label="Search">
+        <Search className="w-4" />
+      </Button>
+    </form>
+  );
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-blue-100">
+      <a href="#main-content" className="sr-only focus:not-sr-only">
+        Skip to content
+      </a>
+      <header className="sticky top-0 z-50 bg-white/95 border-b border-blue-100">
         <div className="container mx-auto px-4">
-          {/* Top Bar */}
-          <div className="flex items-center justify-between py-4">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                <ShoppingCart className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                ClickNCart
-              </span>
+          <div className="flex items-center justify-between gap-4 py-4">
+            <Link
+              to="/"
+              className="text-xl font-semibold text-blue-700 flex gap-2 items-center"
+            >
+              <ShoppingCart className="w-6" />
+              ClickNCart
             </Link>
-
-            {/* Search Bar - Desktop */}
-            <div className="hidden md:flex items-center flex-1 max-w-2xl mx-8">
-              <div className="relative w-full flex items-center gap-2">
-                {/* Input */}
-                <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search products..."
-                    className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Button (appears only when typing) */}
-                {search.trim() !== "" && (
-                  <Button
-                    onClick={handleSearch}
-                    className="whitespace-nowrap bg-blue-600 hover:bg-blue-700"
-                  >
-                    Search
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-4">
-              <Link to="/favorites">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden md:flex hover:text-pink-600 relative"
-                >
-                  <Heart className="w-5 h-5" />
-                </Button>
+            <div className="hidden md:block flex-1 max-w-xl">{searchForm}</div>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/favorites"
+                aria-label="Favorites"
+                className="hidden md:block"
+              >
+                <Heart className="w-5" />
               </Link>
-              <Link to="/login">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden md:flex hover:text-blue-600"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
+              <Link
+                to={getSession() ? "/profile" : "/login"}
+                aria-label="Account"
+                className="hidden md:block"
+              >
+                <User className="w-5" />
               </Link>
-              <Link to="/cart">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative hover:text-blue-600"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {cartCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-gradient-to-r from-blue-600 to-purple-600">
-                      {cartCount}
-                    </Badge>
-                  )}
-                </Button>
+              <Link
+                to="/cart"
+                aria-label={`Cart, ${count} items`}
+                className="flex items-center gap-1"
+              >
+                <ShoppingCart className="w-5" />
+                <span>{count}</span>
               </Link>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="w-5 h-5" />
+              <Button
+                ref={menuButton}
+                className="md:hidden"
+                variant="ghost"
+                aria-label="Toggle navigation"
+                aria-expanded={open}
+                aria-controls="mobile-navigation"
+                onClick={() => setOpen((v) => !v)}
+              >
+                <Menu />
               </Button>
             </div>
           </div>
-
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8 py-3 border-t border-blue-100">
-            <Link
-              to="/"
-              className={`text-sm transition-colors ${
-                location.pathname === "/"
-                  ? "text-blue-600 font-semibold"
-                  : "text-gray-600 hover:text-blue-600"
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/shop"
-              className={`text-sm transition-colors ${
-                location.pathname === "/shop"
-                  ? "text-blue-600 font-semibold"
-                  : "text-gray-600 hover:text-blue-600"
-              }`}
-            >
-              Shop
-            </Link>
-            <Link
-              to="/brands"
-              className={`text-sm transition-colors ${
-                location.pathname === "/brands"
-                  ? "text-blue-600 font-semibold"
-                  : "text-gray-600 hover:text-blue-600"
-              }`}
-            >
-              Brands
-            </Link>
-            <Link
-              to="/sale"
-              className={`text-sm transition-colors ${
-                location.pathname === "/sale"
-                  ? "text-red-600 font-semibold"
-                  : "text-gray-600 hover:text-red-600"
-              }`}
-            >
-              Sale
-            </Link>
+          <nav
+            aria-label="Main navigation"
+            className="hidden md:flex gap-8 py-3 border-t"
+          >
+            {links.map(([to, title]) => (
+              <Link
+                key={to}
+                to={to}
+                aria-current={location.pathname === to ? "page" : undefined}
+                className="hover:text-blue-600"
+              >
+                {title}
+              </Link>
+            ))}
           </nav>
+          {open && (
+            <nav
+              id="mobile-navigation"
+              aria-label="Mobile navigation"
+              className="md:hidden py-4 space-y-4"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setOpen(false);
+                  menuButton.current?.focus();
+                }
+              }}
+            >
+              {searchForm}
+              <div className="flex flex-wrap gap-5">
+                {[
+                  ...links,
+                  ["/favorites", "Favorites"],
+                  [getSession() ? "/profile" : "/login", "Account"],
+                ].map(([to, title]) => (
+                  <Link key={to} to={to}>
+                    {title}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          )}
         </div>
       </header>
-
-      {/* Main Content */}
-      <main>
+      <main id="main-content">
         <Outlet />
       </main>
-
-      {/* Footer */}
-      <footer className="bg-gradient-to-br from-slate-900 to-blue-900 border-t mt-20">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                  <ShoppingCart className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-lg font-semibold text-white">
-                  ClickNCart
-                </span>
-              </div>
-              <p className="text-sm text-blue-200">
-                Your destination for premium tech and lifestyle products.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4 text-white">Shop</h3>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li>
-                  <Link
-                    className="hover:text-white transition-colors"
-                    to={`sale`}
-                  >
-                    New Arrivals
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="hover:text-white transition-colors"
-                    to={`brands`}
-                  >
-                    Best Sellers
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="hover:text-white transition-colors"
-                    to={`sale`}
-                  >
-                    Sale
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="hover:text-white transition-colors"
-                    to={`shop`}
-                  >
-                    Categories
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4 text-white">Help</h3>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li>
-                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
-                    Customer Support
-                  </a>
-                </li>
-                <li>
-                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
-                    Shipping Info
-                  </a>
-                </li>
-                <li>
-                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
-                    Returns
-                  </a>
-                </li>
-                <li>
-                  <a href="#" onClick={handleNotImplemented} className="hover:text-white transition-colors">
-                    FAQ
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4 text-white">Newsletter</h3>
-              <p className="text-sm text-blue-200 mb-3">
-                Subscribe to get special offers and updates.
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="flex-1 px-3 py-2 text-sm border border-blue-700 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-blue-300"
-                />
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  Subscribe
-                </Button>
-              </div>
-            </div>
+      <footer className="mt-20 bg-gradient-to-br from-slate-900 to-blue-900 text-blue-100">
+        <div className="container mx-auto px-4 py-10 grid sm:grid-cols-3 gap-8">
+          <div>
+            <h2 className="font-semibold text-white mb-2">ClickNCart</h2>
+            <p>Tech and lifestyle products.</p>
           </div>
-          <div className="mt-8 pt-8 border-t border-blue-800 text-center text-sm text-blue-200">
-            © 2026 ClickNCart. All rights reserved.
+          <nav aria-label="Footer navigation" className="flex flex-col gap-2">
+            {links.slice(1).map(([to, title]) => (
+              <Link key={to} to={to}>
+                {title}
+              </Link>
+            ))}
+          </nav>
+          <div>
+            <h2 className="font-semibold text-white mb-2">
+              Shopping information
+            </h2>
+            <p>
+              Cash on delivery. Shipping costs and delivery estimates are shown
+              at checkout.
+            </p>
+            {import.meta.env.VITE_SUPPORT_EMAIL && (
+              <a
+                className="underline"
+                href={`mailto:${import.meta.env.VITE_SUPPORT_EMAIL}`}
+              >
+                Contact support
+              </a>
+            )}
           </div>
         </div>
+        <p className="text-center p-4 border-t border-blue-800">
+          © {new Date().getFullYear()} ClickNCart
+        </p>
       </footer>
     </div>
   );

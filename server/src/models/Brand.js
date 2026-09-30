@@ -5,7 +5,6 @@ const brandSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
 
@@ -38,7 +37,12 @@ const brandSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
+);
+
+brandSchema.index(
+  { name: 1 },
+  { unique: true, collation: { locale: "en", strength: 2 } },
 );
 
 export default mongoose.model("Brand", brandSchema);

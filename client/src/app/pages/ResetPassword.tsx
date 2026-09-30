@@ -1,3 +1,4 @@
+import { clearSession } from "../../services/session";
 import { useState, FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { resetPassword } from "../../services/authServices";
@@ -25,11 +26,11 @@ const ResetPassword = () => {
       setLoading(true);
 
       await resetPassword(token!, { password });
+      clearSession();
 
       alert("Password reset successful ✅");
 
       navigate("/login"); // redirect to login
-
     } catch (error: any) {
       alert(error.response?.data?.message || "Reset failed ❌");
     } finally {
@@ -49,6 +50,9 @@ const ResetPassword = () => {
 
         <input
           type="password"
+          required
+          minLength={8}
+          maxLength={72}
           placeholder="New Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -57,6 +61,9 @@ const ResetPassword = () => {
 
         <input
           type="password"
+          required
+          minLength={8}
+          maxLength={72}
           placeholder="Confirm Password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}

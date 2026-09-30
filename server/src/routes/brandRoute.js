@@ -1,3 +1,4 @@
+import { protect, admin } from "../middleware/authMiddleware.js";
 import express from "express";
 import {
   createBrand,
@@ -12,8 +13,8 @@ import {
 const router = express.Router();
 
 // create a brand
-router.post("/", createBrand);
-router.post("/seed", seedBrands);
+router.post("/", protect, admin, createBrand);
+router.post("/seed", protect, admin, seedBrands);
 
 // get a brand
 router.get("/", brandPage);
@@ -22,10 +23,9 @@ router.get("/", brandPage);
 router.get("/:id", getBrandById);
 
 // update a brand
-router.put("/:id", updateBrand);
+router.put("/:id", protect, admin, updateBrand);
 
 // delete a brand
-router.delete("/:id", deleteBrand);
+router.delete("/:id", protect, admin, deleteBrand);
 
-
-export default router
+export default router;

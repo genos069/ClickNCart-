@@ -1,29 +1,29 @@
+import type { Product } from "../types";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { ArrowRight, Star, Truck, Shield, Zap, CreditCard } from "lucide-react";
-import { products } from "../data/products";
 import { useEffect, useState } from "react";
 import { getAllProducts } from "../../services/homeServices";
 
 export function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [home, setHome] = useState([]);
+  const [home, setHome] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   const heroSlides = [
     {
-      title: "Spring Collection 2026",
+      title: "Explore the Collection",
       subtitle:
-        "Discover the latest in tech and lifestyle. Up to 30% off on selected items.",
-      badge: "Limited Time Offer",
+        "Discover tech and lifestyle products from our current catalog.",
+      badge: "Explore",
       gradient: "from-blue-900 via-purple-900 to-indigo-900",
     },
     {
-      title: "Summer Sale Event",
-      subtitle: "Beat the heat with hot deals! Save up to 50% on electronics.",
-      badge: "Flash Sale",
+      title: "Current Offers",
+      subtitle: "Browse current discounts on selected products.",
+      badge: "Offers",
       gradient: "from-orange-600 via-red-600 to-pink-600",
     },
     {
@@ -57,8 +57,10 @@ export function HomePage() {
     fetchProducts();
   }, []);
 
-  const featuredProducts = Array.isArray(home) ? home.slice(9, 41) : [];
-  const trendingProducts = Array.isArray(home) ? home.slice(47,51) : [];
+  const featuredProducts = Array.isArray(home) ? home.slice(0, 8) : [];
+  const trendingProducts = Array.isArray(home)
+    ? [...home].sort((a, b) => b.rating - a.rating).slice(0, 4)
+    : [];
 
   if (loading) {
     return <div className="text-center py-20">Loading...</div>;
@@ -244,7 +246,10 @@ export function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="relative h-80 rounded-2xl overflow-hidden group cursor-pointer">
               <img
-                src={products[2].image}
+                src={
+                  home.find((p) => p.category === "Wearables")?.image ||
+                  home[0]?.image
+                }
                 alt="Wearables"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -264,7 +269,10 @@ export function HomePage() {
             </div>
             <div className="relative h-80 rounded-2xl overflow-hidden group cursor-pointer">
               <img
-                src={products[4].image}
+                src={
+                  home.find((p) => p.category === "Photography")?.image ||
+                  home[0]?.image
+                }
                 alt="Photography"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -331,30 +339,6 @@ export function HomePage() {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter - Design 6: Centered CTA */}
-      <section className="py-20 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl mb-4">Stay in the Loop</h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Subscribe to our newsletter for exclusive deals, new arrivals, and
-            tech tips.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-6 py-2 rounded-lg bg-white/10 backdrop-blur text-white placeholder:text-blue-200 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
-            />
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 border-0 text-white"
-            >
-              Subscribe
-            </Button>
           </div>
         </div>
       </section>

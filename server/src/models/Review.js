@@ -2,10 +2,13 @@ import mongoose from "mongoose";
 
 const reviewSchema = new mongoose.Schema(
   {
+    verifiedPurchase: { type: Boolean, default: false },
+    purchasedAt: Date,
     rating: {
       type: Number,
       required: true,
       min: 1,
+      validate: Number.isInteger,
       max: 5,
     },
 
@@ -34,7 +37,7 @@ const reviewSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Prevent duplicate reviews

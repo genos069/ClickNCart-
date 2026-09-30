@@ -21,7 +21,6 @@ const ForgotPassword = () => {
 
       // ✅ Show success message instead of token
       setMessage(data.message || "Reset link sent to your email ✅");
-
     } catch (error: any) {
       alert(error.response?.data?.message || "Something went wrong ❌");
     } finally {
@@ -41,9 +40,7 @@ const ForgotPassword = () => {
 
         {/* ✅ Success Message */}
         {message && (
-          <p className="text-green-600 text-sm mb-3 text-center">
-            {message}
-          </p>
+          <p className="text-green-600 text-sm mb-3 text-center">{message}</p>
         )}
 
         <input

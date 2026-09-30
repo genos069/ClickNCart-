@@ -5,7 +5,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "node --test",
+    "check": "node scripts/check-syntax.js",
+    "migrate": "node scripts/migrate.js",
+    "test:unit": "node --test test/unit.test.js",
+    "test:integration": "node --test test/regression.test.js"
   },
   "keywords": [],
   "author": "ClickNCart",
@@ -14,18 +19,20 @@
   "dependencies": {
     "axios": "^1.15.0",
     "bcryptjs": "^3.0.3",
-    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
-    "crypto": "^1.0.1",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
-    "node": "^25.9.0",
-    "nodemailer": "^8.0.5",
-    "razorpay": "^2.9.6"
+    "nodemailer": "^10.0.13"
   },
   "devDependencies": {
+    "mongodb-memory-server": "^11.3.0",
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=24 <25"
   }
 }

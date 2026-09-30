@@ -1,40 +1,31 @@
-import express from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import connectDB from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js";
-import productRoutes from "./routes/productRoutes.js";
-import reviewRoutes from "./routes/reviewRoutes.js";
-import brandRoute from "./routes/brandRoute.js";
-import cartRoutes from "./routes/cartRoutes.js";
-import orderRoutes from "./routes/orderRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
-
-
-dotenv.config({quiet: true});
-const app = express();
-
-// Connect DB
-connectDB();
-
-// Middleware
-app.use(express.json());
-app.use(cors());
-app.use("/api/auth", authRoutes);
-app.use("/api/product", productRoutes)
-app.use("/api/review", reviewRoutes)
-app.use("/api/brand", brandRoute)
-app.use("/api/cart", cartRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/payment", paymentRoutes);
-
-// Test route
-app.get("/", (req, res) => {
-  res.send("API is running...");
+import "dotenv/config";
+import mongoose from "mongoose";
+import { app } from "./app.js";
+if (
+  !process.env.MONGO_URI ||
+  !process.env.JWT_SECRET ||
+  process.env.JWT_SECRET.length < 32
+)
+  throw new Error(
+    "MONGO_URI and a JWT_SECRET of at least 32 characters are required",
+  );
+if (
+  process.env.NODE_ENV === "production" &&
+  !process.env.CLIENT_URL?.startsWith("https://")
+)
+  throw new Error("Production CLIENT_URL must use HTTPS");
+await mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 10000,
+  autoIndex: process.env.NODE_ENV !== "production",
 });
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const server = app.listen(process.env.PORT || 3000, () =>
+  console.log("ClickNCart API ready"),
+);
+for (const signal of ["SIGTERM", "SIGINT"])
+  process.on(signal, () => {
+    server.close(async () => {
+      await mongoose.disconnect();
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10000).unref();
+  });

@@ -1,12 +1,7 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-dotenv.config({quiet: true});
-
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
-  });
-};
-
-export default generateToken;
+export default (user) =>
+  jwt.sign(
+    { id: user._id, version: user.tokenVersion || 0 },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d", algorithm: "HS256" },
+  );

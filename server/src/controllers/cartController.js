@@ -1,280 +1,86 @@
 import Cart from "../models/Cart.js";
-
-// GET CART
+import Product from "../models/Product.js";
+import { cartResponse, refreshPrices } from "../services/cartService.js";
+import { fail, quantity, address, objectId } from "../utils/validation.js";
+const find = (req) => Cart.findOne({ user: req.user._id });
+async function required(req) {
+  const cart = await find(req);
+  if (!cart) fail("Cart not found", 404);
+  return cart;
+}
+async function save(cart, res) {
+  await refreshPrices(cart, undefined, false);
+  await cart.save();
+  res.json(cartResponse(cart));
+}
 export const getCart = async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id });
-
-  if (!cart) {
-    return res.json({
-      items: [],
-      subtotal: 0,
-      shipping: 0,
-      tax: 0,
-      discount: 0,
-      discountAmount: 0,
-      total: 0,
-    });
-  }
-
-  const subtotal = cart.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  const shipping = subtotal > 100 ? 0 : 15;
-  const tax = subtotal * 0.08;
-
-  const discountAmount = (subtotal * cart.discount) / 100;
-
-  const total = subtotal + shipping + tax - discountAmount;
-
-  res.json({
-    items: cart.items,
-    subtotal,
-    shipping,
-    tax,
-    discount: cart.discount,
-    discountAmount,
-    total,
-  });
+  const cart = await find(req);
+  if (cart) await refreshPrices(cart, undefined, false);
+  res.json(cartResponse(cart));
 };
-
-// ADD TO CART
 export const addToCart = async (req, res) => {
-  const { productId, name, price, image } = req.body;
-
-  let cart = await Cart.findOne({ user: req.user._id });
-
-  if (!cart) {
-    cart = new Cart({
-      user: req.user._id,
-      items: [],
-    });
-  }
-
-  const exist = cart.items.find((item) => item.productId === productId);
-
-  if (exist) {
-    exist.quantity += 1;
-  } else {
+  const productId = objectId(req.body.productId);
+  const count = quantity(req.body.quantity ?? 1);
+  const product = await Product.findById(productId);
+  if (!product) fail("Product not found", 404);
+  if (!product.inStock) fail("Product out of stock", 409);
+  const cart = (await find(req)) || new Cart({ user: req.user._id, items: [] });
+  const item = cart.items.find((i) => i.productId === productId);
+  if (item) item.quantity = quantity(item.quantity + count);
+  else
     cart.items.push({
       productId,
-      name,
-      price,
-      quantity: 1,
-      image,
+      quantity: count,
+      name: product.name,
+      price: product.price,
+      image: product.image,
     });
-  }
-
-  await cart.save();
-
-  const totals = calculateCartTotals(cart);
-
-  res.json({
-    items: cart.items,
-    ...totals,
-  });
+  await save(cart, res);
 };
-
-// REMOVE ITEM
 export const removeFromCart = async (req, res) => {
-  const { productId } = req.params;
-
-  const cart = await Cart.findOne({ user: req.user._id });
-
-  cart.items = cart.items.filter((item) => item.productId !== productId);
-
-  await cart.save();
-
-  const totals = calculateCartTotals(cart);
-
-  res.json({
-    items: cart.items,
-    ...totals,
-  });
+  const cart = await find(req);
+  if (!cart) return res.json(cartResponse(null));
+  cart.items = cart.items.filter((i) => i.productId !== req.params.productId);
+  await save(cart, res);
 };
-
-// CLEAR CART
 export const clearCart = async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id });
-
+  const cart = await find(req);
   if (cart) {
     cart.items = [];
+    cart.discount = 0;
+    cart.promoCode = undefined;
     await cart.save();
   }
-
-  res.json({ message: "Cart cleared" });
+  res.json(cartResponse(cart));
 };
-
-
-// PROMOCODE LOGIC
-export const applyPromoCode = async (req, res) => {
-  const { code } = req.body;
-
-  const cart = await Cart.findOne({ user: req.user._id });
-
-  if (!cart) {
-    return res.status(404).json({ message: "Cart not found" });
-  }
-
-  let discount = 0;
-
-  if (code === "SAVE10") {
-    discount = 10; // 10%
-  } else if (code === "SAVE20") {
-    discount = 20;
-  } else {
-    return res.status(400).json({ message: "Invalid promo code ❌" });
-  }
-
-  cart.discount = discount;
-  cart.promoCode = code;
-
-  await cart.save();
-
-  const totals = calculateCartTotals(cart);
-
-  res.json({
-    items: cart.items,
-    promoCode: cart.promoCode,
-    ...totals,
-  });
-};
-
-
-//Calculate Cart Total
-const calculateCartTotals = (cart) => {
-  const subtotal = cart.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  const shipping = subtotal > 100 ? 0 : 15;
-  const tax = subtotal * 0.08;
-
-  const discountAmount = (subtotal * cart.discount) / 100;
-
-  const total = subtotal + shipping + tax - discountAmount;
-
-  return {
-    subtotal,
-    shipping,
-    tax,
-    discount: cart.discount,
-    discountAmount,
-    total,
-  };
-};
-
-
-// UPDATE CART ITEM QUANTITY
 export const updateCartItem = async (req, res) => {
-  const { productId, quantity } = req.body;
-
-  const cart = await Cart.findOne({ user: req.user._id });
-
-  if (!cart) {
-    return res.status(404).json({ message: "Cart not found" });
-  }
-
-  const item = cart.items.find((i) => i.productId === productId);
-
-  if (!item) {
-    return res.status(404).json({ message: "Item not found" });
-  }
-
-  if (quantity <= 0) {
-    // remove item
-    cart.items = cart.items.filter((i) => i.productId !== productId);
-  } else {
-    item.quantity = quantity;
-  }
-
-  await cart.save();
-
-  // ✅ Recalculate totals here (IMPORTANT)
-  const subtotal = cart.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  const shipping = subtotal > 100 ? 0 : 15;
-  const tax = subtotal * 0.08;
-  const discountAmount = (subtotal * cart.discount) / 100;
-  const total = subtotal + shipping + tax - discountAmount;
-
-  res.json({
-    items: cart.items,
-    subtotal,
-    shipping,
-    tax,
-    discount: cart.discount,
-    discountAmount,
-    total,
-  });
+  const count = quantity(req.body.quantity, true);
+  const cart = await required(req);
+  const item = cart.items.find((i) => i.productId === req.body.productId);
+  if (!item) fail("Item not found", 404);
+  if (!count) cart.items = cart.items.filter((i) => i !== item);
+  else item.quantity = count;
+  await save(cart, res);
 };
-
-// UPDATE SHIPPING METHOD
+export const applyPromoCode = async (req, res) => {
+  const code =
+    typeof req.body.code === "string" ? req.body.code.trim().toUpperCase() : "";
+  if (!["SAVE10", "SAVE20"].includes(code)) fail("Invalid promo code");
+  const cart = await required(req);
+  cart.discount = code === "SAVE10" ? 10 : 20;
+  cart.promoCode = code;
+  await save(cart, res);
+};
 export const updateShipping = async (req, res) => {
-  const { method } = req.body;
-
-  const cart = await Cart.findOne({ user: req.user._id });
-
-  if (!cart) {
-    return res.status(404).json({ message: "Cart not found" });
-  }
-
-  cart.shippingMethod = method;
-
-  // 🧠 Recalculate totals
-  const subtotal = cart.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  // 🚚 SHIPPING LOGIC
-  let shipping = 0;
-
-  if (method === "express") {
-    shipping = 15;
-  } else {
-    shipping = subtotal > 100 ? 0 : 15;
-  }
-
-  const tax = subtotal * 0.08;
-  const discountAmount = (subtotal * cart.discount) / 100;
-  const total = subtotal + shipping + tax - discountAmount;
-
-  await cart.save();
-
-  res.json({
-    items: cart.items,
-    subtotal,
-    shipping,
-    tax,
-    discount: cart.discount,
-    discountAmount,
-    total,
-    shippingMethod: cart.shippingMethod,
-  });
+  if (!["standard", "express"].includes(req.body.method))
+    fail("Invalid shipping method");
+  const cart = await required(req);
+  cart.shippingMethod = req.body.method;
+  await save(cart, res);
 };
-
-// SHIPPING ADDRESS
 export const saveShippingAddress = async (req, res) => {
-  try {
-    const cart = await Cart.findOne({ user: req.user._id });
-
-    if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
-    }
-
-    cart.shippingAddress = req.body;
-
-    await cart.save();
-
-    res.json(cart);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  const value = address(req.body);
+  const cart = await required(req);
+  cart.shippingAddress = value;
+  await save(cart, res);
 };
-
