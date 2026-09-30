@@ -2,7 +2,7 @@
 
 Source: the supplied `ClickNCart-Audit(1).md`, covering original main commit `4ec05f9a4459647fe3e0b3735506105c30f086d4`.
 
-The table records implemented changes, not a claim that every possible defect has been eliminated. UI and real-database verification still need the checks described below.
+The table records implemented changes, not a claim that every possible defect has been eliminated. Real-database verification passed in GitHub CI; browser and live-service verification still need the checks described below.
 
 | Finding | Implemented change |
 |---|---|
@@ -62,3 +62,7 @@ Helmet security headers, constrained CORS, JSON body limit, application/auth thr
 - No live database was migrated; no real mail, AI request, payment or production deployment was exercised.
 
 Before production, obtain passing CI, run the browser and staging checkout checklist in README, test the migration on a backup, verify mail, rotate exposed credentials, and configure actual deployment URLs and policies.
+
+## GitHub CI verification
+
+[Run 36743399986](https://github.com/genos069/ClickNCart-/actions/runs/36743399986), commit `cd55e20b8d27b05568b3f945bee204dc033dba40`, completed successfully. All **26 tests passed**, including the 9 real MongoDB integration tests and concurrent atomic/idempotent checkout. Server syntax checks, clean installs, frontend TypeScript/production build, and both dependency audits passed; each audit reported **zero vulnerabilities**. This resolves the local database and final dependency-scan verification gaps above. Browser, migration-on-existing-data, real email/AI and production deployment checks remain outstanding.
